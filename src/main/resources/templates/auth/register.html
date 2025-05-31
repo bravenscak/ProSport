@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registracija - ProSport</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 2rem 0;
+        }
+        .register-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .register-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .register-body {
+            padding: 2rem;
+        }
+        .btn-register {
+            background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+            border: none;
+            padding: 12px;
+            font-weight: 500;
+        }
+        .btn-register:hover {
+            background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="register-card">
+                <div class="register-header">
+                    <i class="bi bi-person-plus display-4 mb-3"></i>
+                    <h3>Registracija</h3>
+                    <p class="mb-0">Kreirajte svoj ProSport račun</p>
+                </div>
+
+                <div class="register-body">
+                    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <span th:text="${error}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+
+                    <form th:action="@{/register}" method="post" id="registerForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="firstName" class="form-label">
+                                    <i class="bi bi-person me-2"></i>Ime
+                                </label>
+                                <input type="text" class="form-control" id="firstName" name="firstName"
+                                       placeholder="Unesite ime" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="lastName" class="form-label">
+                                    <i class="bi bi-person me-2"></i>Prezime
+                                </label>
+                                <input type="text" class="form-control" id="lastName" name="lastName"
+                                       placeholder="Unesite prezime" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">
+                                <i class="bi bi-at me-2"></i>Korisničko ime
+                            </label>
+                            <input type="text" class="form-control" id="username" name="username"
+                                   placeholder="Unesite korisničko ime" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="bi bi-envelope me-2"></i>Email adresa
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   placeholder="ime@example.com" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label">
+                                    <i class="bi bi-lock me-2"></i>Lozinka
+                                </label>
+                                <input type="password" class="form-control" id="password" name="password"
+                                       placeholder="Minimalno 6 znakova" required minlength="6">
+                                <div class="form-text">Minimalno 6 znakova</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="confirmPassword" class="form-label">
+                                    <i class="bi bi-lock-fill me-2"></i>Potvrdite lozinku
+                                </label>
+                                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                                       placeholder="Ponovite lozinku" required>
+                                <div id="passwordMatch" class="form-text"></div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-primary btn-register">
+                                <i class="bi bi-person-plus me-2"></i>Registriraj se
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center">
+                        <p class="mb-2">Već imate račun?</p>
+                        <a th:href="@{/login}" class="btn btn-outline-primary">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Prijavite se
+                        </a>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="text-center">
+                        <a th:href="@{/}" class="text-muted">
+                            <i class="bi bi-arrow-left me-2"></i>Natrag na početnu
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.getElementById('confirmPassword').addEventListener('input', function() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = this.value;
+        const matchDiv = document.getElementById('passwordMatch');
+
+        if (confirmPassword === '') {
+            matchDiv.textContent = '';
+            matchDiv.className = 'form-text';
+        } else if (password === confirmPassword) {
+            matchDiv.textContent = '✓ Lozinke se poklapaju';
+            matchDiv.className = 'form-text text-success';
+        } else {
+            matchDiv.textContent = '✗ Lozinke se ne poklapaju';
+            matchDiv.className = 'form-text text-danger';
+        }
+    });
+
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (password !== confirmPassword) {
+            e.preventDefault();
+            alert('Lozinke se ne poklapaju!');
+        }
+    });
+</script>
+</body>
+</html>

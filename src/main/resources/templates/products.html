@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proizvodi - ProSport</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        .product-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .category-filter {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+        }
+        .filter-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: #e9ecef;
+            border-radius: 20px;
+            margin-bottom: 1rem;
+            border: 2px solid transparent;
+        }
+        .filter-badge.active {
+            background: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-3" th:href="@{/}">
+            <i class="bi bi-trophy-fill me-2"></i>ProSport
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <form class="d-flex mx-auto" style="width: 40%;" th:action="@{/search}" method="get">
+                <input class="form-control me-2" type="search" name="q" placeholder="Pretraži proizvode...">
+                <button class="btn btn-outline-light" type="submit">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-grid-3x3-gap me-1"></i>Kategorije
+                    </a>
+                    <ul class="dropdown-menu" style="min-width: 250px;">
+                        <li><a class="dropdown-item" th:href="@{/products}">Svi proizvodi</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li th:each="category : ${categories}">
+                            <a class="dropdown-item" th:href="@{/products(categoryId=${category.id})}"
+                               th:text="${category.name}">Kategorija</a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/cart}">
+                        <i class="bi bi-cart me-1"></i>Košarica
+                        <span class="badge bg-danger ms-1">0</span>
+                    </a>
+                </li>
+
+                <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person me-1"></i>
+                        <span sec:authentication="name">Korisnik</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" th:href="@{/profile}">
+                            <i class="bi bi-person-circle me-2"></i>Profil</a></li>
+                        <li><a class="dropdown-item" th:href="@{/orders}">
+                            <i class="bi bi-bag me-2"></i>Moje narudžbe</a></li>
+                        <li sec:authorize="hasRole('ADMIN')">
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li sec:authorize="hasRole('ADMIN')">
+                            <a class="dropdown-item" th:href="@{/admin}">
+                                <i class="bi bi-gear me-2"></i>Admin panel</a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form th:action="@{/logout}" method="post" class="d-inline">
+                                <button type="submit" class="dropdown-item">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Odjava
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="nav-item" sec:authorize="!isAuthenticated()">
+                    <a class="nav-link" th:href="@{/login}">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Prijava
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container my-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-5 fw-bold">
+                <span th:if="${selectedCategory}" th:text="${selectedCategory.name}">Kategorija</span>
+                <span th:unless="${selectedCategory}">Svi proizvodi</span>
+            </h1>
+            <p class="lead text-muted" th:if="${selectedCategory}" th:text="${selectedCategory.description}">
+                Opis kategorije
+            </p>
+            <p class="lead text-muted" th:unless="${selectedCategory}">
+                Pregledajte našu kompletnu ponudu sportske opreme
+            </p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col">
+            <div class="category-filter">
+                <h6 class="mb-3"><i class="bi bi-funnel me-2"></i>Filtriraj po kategoriji:</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    <a th:href="@{/products}"
+                       th:class="${selectedCategory == null ? 'filter-badge active text-decoration-none' : 'filter-badge text-decoration-none'}">
+                        Sve kategorije
+                    </a>
+                    <a th:each="category : ${categories}"
+                       th:href="@{/products(categoryId=${category.id})}"
+                       th:class="${selectedCategory != null and selectedCategory.id == category.id ? 'filter-badge active text-decoration-none' : 'filter-badge text-decoration-none'}"
+                       th:text="${category.name}">
+                        Kategorija
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div th:if="${products == null or #lists.isEmpty(products)}" class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-search display-1 text-muted"></i>
+                <h3 class="mt-3 text-muted">Nema proizvoda</h3>
+                <p class="text-muted">Trenutno nema proizvoda u ovoj kategoriji.</p>
+                <a th:href="@{/products}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left me-2"></i>Svi proizvodi
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6 mb-4" th:each="product : ${products}">
+            <div class="card product-card h-100 border-0 shadow-sm">
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                     style="height: 250px;">
+                    <i class="bi bi-image display-4 text-muted"></i>
+                </div>
+
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-subtitle mb-2 text-muted" th:text="${product.brand}">Brand</h6>
+
+                    <h5 class="card-title" th:text="${product.name}">Naziv proizvoda</h5>
+
+                    <small class="text-muted mb-2">
+                        <i class="bi bi-tag me-1"></i>
+                        <span th:text="${product.categoryName}">Kategorija</span>
+                    </small>
+
+                    <p class="card-text text-muted flex-grow-1" th:text="${product.description}">
+                        Opis proizvoda
+                    </p>
+
+                    <div class="mb-3">
+                            <span th:if="${product.stockQuantity > 0}" class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>Na zalihi: <span th:text="${product.stockQuantity}">0</span>
+                            </span>
+                        <span th:if="${product.stockQuantity == 0}" class="badge bg-danger">
+                                <i class="bi bi-x-circle me-1"></i>Nema na zalihi
+                            </span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="h5 mb-0 text-primary fw-bold" th:text="${product.price + ' €'}">0.00 €</span>
+                        <div>
+                            <a th:href="@{/products/{id}(id=${product.id})}"
+                               class="btn btn-outline-primary btn-sm me-2">
+                                <i class="bi bi-eye me-1"></i>Detalji
+                            </a>
+                            <button class="btn btn-primary btn-sm" th:disabled="${product.stockQuantity == 0}">
+                                <i class="bi bi-cart-plus me-1"></i>Dodaj
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${products != null and not #lists.isEmpty(products)}" class="row mt-4">
+        <div class="col">
+            <div class="text-center text-muted">
+                <small>
+                    Prikazano <strong th:text="${products.size()}">0</strong> proizvoda
+                    <span th:if="${selectedCategory}" th:text="'u kategoriji ' + ${selectedCategory.name}"></span>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="bg-dark text-white py-4 mt-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <h5>ProSport</h5>
+                <p class="mb-0">Vaš pouzdani partner za sportsku opremu</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <p class="mb-0">&copy; 2025 ProSport. Sva prava pridržana.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
