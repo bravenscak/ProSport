@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title th:text="${product.name + ' - ProSport'}">Proizvod - ProSport</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -46,7 +48,7 @@
                 <li class="nav-item">
                     <a class="nav-link" th:href="@{/cart}">
                         <i class="bi bi-cart me-1"></i>Košarica
-                        <span class="badge bg-danger ms-1">0</span>
+                        <span class="badge bg-danger ms-1 cart-badge" th:text="${cartItemCount}" th:style="${cartItemCount > 0 ? '' : 'display: none;'}">0</span>
                     </a>
                 </li>
 
@@ -147,7 +149,9 @@
                                th:max="${product.stockQuantity}" style="width: 100px;">
                     </div>
                     <div class="col-auto d-flex align-items-end">
-                        <button class="btn btn-primary btn-lg px-4">
+                        <button class="btn btn-primary btn-lg px-4 add-to-cart-btn"
+                                th:data-product-id="${product.id}"
+                                data-quantity-input="quantity">
                             <i class="bi bi-cart-plus me-2"></i>Dodaj u košaricu
                         </button>
                     </div>
@@ -211,9 +215,10 @@
             </div>
         </div>
     </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
+<script th:src="@{/js/cart-common.js}"></script>
 <script>
     document.getElementById('quantity')?.addEventListener('change', function() {
         const max = parseInt(this.max);

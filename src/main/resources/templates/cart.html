@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Košarica - ProSport</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        .cart-item {
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+        .cart-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .product-image {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .quantity-input {
+            width: 70px;
+            text-align: center;
+        }
+        .cart-summary {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            position: sticky;
+            top: 2rem;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-3" th:href="@{/}">
+            <i class="bi bi-trophy-fill me-2"></i>ProSport
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <form class="d-flex mx-auto" style="width: 40%;" th:action="@{/search}" method="get">
+                <input class="form-control me-2" type="search" name="q" placeholder="Pretraži proizvode...">
+                <button class="btn btn-outline-light" type="submit">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" th:href="@{/cart}">
+                        <i class="bi bi-cart me-1"></i>Košarica
+                        <span class="badge bg-danger ms-1" id="cartBadge" th:text="${cart.totalItems ?: 0}">0</span>
+                    </a>
+                </li>
+
+                <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person me-1"></i>
+                        <span sec:authentication="name">Korisnik</span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" th:href="@{/profile}">
+                            <i class="bi bi-person-circle me-2"></i>Profil</a></li>
+                        <li sec:authorize="hasRole('ADMIN')">
+                            <a class="dropdown-item" th:href="@{/admin}">
+                                <i class="bi bi-gear me-2"></i>Admin panel</a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form th:action="@{/logout}" method="post" class="d-inline">
+                                <button type="submit" class="dropdown-item">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Odjava
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="nav-item" sec:authorize="!isAuthenticated()">
+                    <a class="nav-link" th:href="@{/login}">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Prijava
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container my-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none">Početna</a></li>
+            <li class="breadcrumb-item active">Košarica</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-5 fw-bold mb-4">
+                <i class="bi bi-cart me-2"></i>Vaša košarica
+            </h1>
+        </div>
+    </div>
+
+    <div id="alertContainer"></div>
+
+    <div th:if="${cart.items == null or #lists.isEmpty(cart.items)}" class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-cart-x display-1 text-muted"></i>
+                <h3 class="mt-3 text-muted">Košarica je prazna</h3>
+                <p class="text-muted">Dodajte proizvode u košaricu da biste nastavili s kupovinom.</p>
+                <div class="mt-4">
+                    <a th:href="@{/products}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-arrow-left me-2"></i>Nastavi kupovinu
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${cart.items != null and not #lists.isEmpty(cart.items)}" class="row">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Proizvodi u košarici (<span th:text="${cart.totalItems}">0</span>)</h5>
+                <button class="btn btn-outline-danger btn-sm" onclick="clearCart()">
+                    <i class="bi bi-trash me-1"></i>Očisti košaricu
+                </button>
+            </div>
+
+            <div id="cartItems">
+                <div class="cart-item p-3" th:each="item : ${cart.items}" th:id="'cartItem-' + ${item.id}">
+                    <div class="row align-items-center">
+                        <div class="col-md-2 text-center">
+                            <img th:if="${item.productImageUrl != null}"
+                                 th:src="${item.productImageUrl}"
+                                 th:alt="${item.productName}"
+                                 class="product-image">
+                            <div th:unless="${item.productImageUrl != null}"
+                                 class="product-image bg-light d-flex align-items-center justify-content-center">
+                                <i class="bi bi-image text-muted"></i>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <h6 class="mb-1" th:text="${item.productName}">Naziv proizvoda</h6>
+                            <small class="text-muted" th:text="${item.productBrand}">Brand</small><br>
+                            <small class="text-muted">
+                                <i class="bi bi-tag me-1"></i>
+                                <span th:text="${item.categoryName}">Kategorija</span>
+                            </small>
+                        </div>
+
+                        <div class="col-md-2 text-center">
+                            <span class="fw-bold text-primary" th:text="${item.priceAtTime + ' €'}">0.00 €</span>
+                        </div>
+
+                        <div class="col-md-2">
+                            <div class="quantity-controls">
+                                <button class="btn btn-outline-secondary btn-sm"
+                                        onclick="updateQuantity(this)"
+                                        th:data-item-id="${item.id}"
+                                        data-action="decrease">
+                                    <i class="bi bi-dash"></i>
+                                </button>
+                                <input type="number" class="form-control quantity-input"
+                                       th:value="${item.quantity}"
+                                       th:data-item-id="${item.id}"
+                                       th:max="${item.maxQuantity}"
+                                       min="1"
+                                       onchange="updateQuantityDirect(this)">
+                                <button class="btn btn-outline-secondary btn-sm"
+                                        onclick="updateQuantity(this)"
+                                        th:data-item-id="${item.id}"
+                                        data-action="increase">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                Max: <span th:text="${item.maxQuantity}">0</span> kom
+                            </small>
+                        </div>
+
+                        <div class="col-md-2 text-center">
+                            <div class="fw-bold text-success mb-2" th:text="${item.totalPrice + ' €'}">0.00 €</div>
+                            <button class="btn btn-outline-danger btn-sm"
+                                    onclick="removeFromCart(this)"
+                                    th:data-item-id="${item.id}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <a th:href="@{/products}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-2"></i>Nastavi kupovinu
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="cart-summary">
+                <h5 class="mb-4">
+                    <i class="bi bi-receipt me-2"></i>Sažetak narudžbe
+                </h5>
+
+                <div class="d-flex justify-content-between mb-3">
+                    <span>Ukupno artikala:</span>
+                    <span class="fw-bold" id="totalItems" th:text="${cart.totalItems}">0</span>
+                </div>
+
+                <div class="d-flex justify-content-between mb-3">
+                    <span>Ukupan iznos:</span>
+                    <span class="h5 text-primary fw-bold" id="totalAmount" th:text="${cart.totalAmount + ' €'}">0.00 €</span>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-between mb-4">
+                    <span class="h6">UKUPNO ZA PLAĆANJE:</span>
+                    <span class="h5 text-success fw-bold" id="finalAmount" th:text="${cart.totalAmount + ' €'}">0.00 €</span>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button class="btn btn-success btn-lg" sec:authorize="isAuthenticated()">
+                        <i class="bi bi-credit-card me-2"></i>Nastavi na plaćanje
+                    </button>
+
+                    <div sec:authorize="!isAuthenticated()" class="text-center">
+                        <p class="small text-muted mb-3">Za nastavak morate se prijaviti</p>
+                        <a th:href="@{/login}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Prijavite se
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<script>
+    const token = $('meta[name="_csrf"]').attr('content');
+    const header = $('meta[name="_csrf_header"]').attr('content');
+
+    $.ajaxSetup({
+        beforeSend: function(xhr) {
+            xhr.setRequestHeader(header, token);
+        }
+    });
+
+    function showAlert(type, message) {
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        $('#alertContainer').html(alertHtml);
+
+        setTimeout(() => {
+            $('.alert').fadeOut();
+        }, 5000);
+    }
+
+    function updateQuantity(button) {
+        const itemId = $(button).data('item-id');
+        const action = $(button).data('action');
+        const quantityInput = $(`input[data-item-id="${itemId}"]`);
+        let currentQuantity = parseInt(quantityInput.val());
+        const maxQuantity = parseInt(quantityInput.attr('max'));
+
+        if (action === 'increase' && currentQuantity < maxQuantity) {
+            currentQuantity++;
+        } else if (action === 'decrease' && currentQuantity > 1) {
+            currentQuantity--;
+        } else {
+            return;
+        }
+
+        quantityInput.val(currentQuantity);
+        updateCartItem(itemId, currentQuantity);
+    }
+
+    function updateQuantityDirect(input) {
+        const itemId = $(input).data('item-id');
+        const quantity = parseInt($(input).val());
+        const maxQuantity = parseInt($(input).attr('max'));
+
+        if (quantity < 1) {
+            $(input).val(1);
+            return;
+        }
+
+        if (quantity > maxQuantity) {
+            $(input).val(maxQuantity);
+            showAlert('warning', `Maksimalna dostupna količina je ${maxQuantity} kom`);
+            return;
+        }
+
+        updateCartItem(itemId, quantity);
+    }
+
+    function updateCartItem(itemId, quantity) {
+        $.ajax({
+            url: '/cart/update',
+            method: 'POST',
+            data: {
+                cartItemId: itemId,
+                quantity: quantity
+            },
+            success: function(response) {
+                if (response.success) {
+                    updateCartSummary(response.cart);
+                    showAlert('success', response.message);
+                } else {
+                    showAlert('danger', response.message);
+                }
+            },
+            error: function() {
+                showAlert('danger', 'Greška pri ažuriranju košarice');
+            }
+        });
+    }
+
+    function removeFromCart(button) {
+        const itemId = $(button).data('item-id');
+
+        if (confirm('Jeste li sigurni da želite ukloniti ovaj proizvod iz košarice?')) {
+            $.ajax({
+                url: '/cart/remove',
+                method: 'POST',
+                data: {
+                    cartItemId: itemId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $(`#cartItem-${itemId}`).fadeOut(300, function() {
+                            $(this).remove();
+
+                            if (response.cart.items.length === 0) {
+                                location.reload(); // Preusmjeri na praznu košaricu
+                            } else {
+                                updateCartSummary(response.cart);
+                            }
+                        });
+                        showAlert('success', response.message);
+                    } else {
+                        showAlert('danger', response.message);
+                    }
+                },
+                error: function() {
+                    showAlert('danger', 'Greška pri uklanjanju proizvoda');
+                }
+            });
+        }
+    }
+
+    function clearCart() {
+        if (confirm('Jeste li sigurni da želite očistiti cijelu košaricu?')) {
+            $.ajax({
+                url: '/cart/clear',
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        showAlert('danger', response.message);
+                    }
+                },
+                error: function() {
+                    showAlert('danger', 'Greška pri čišćenju košarice');
+                }
+            });
+        }
+    }
+
+    function updateCartSummary(cart) {
+        $('#totalItems').text(cart.totalItems);
+        $('#totalAmount').text(cart.totalAmount + ' €');
+        $('#finalAmount').text(cart.totalAmount + ' €');
+        $('#cartBadge').text(cart.totalItems || 0);
+    }
+</script>
+</body>
+</html>
