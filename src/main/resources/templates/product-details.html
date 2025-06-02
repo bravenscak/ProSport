@@ -136,10 +136,6 @@
                     <span th:if="${product.stockQuantity == 0}" class="badge bg-danger fs-6 px-3 py-2">
                         <i class="bi bi-x-circle me-2"></i>Nema na zalihi
                     </span>
-                    <span th:if="${product.stockQuantity > 0 and product.stockQuantity <= 5}"
-                          class="badge bg-warning text-dark fs-6 px-3 py-2">
-                        <i class="bi bi-exclamation-triangle me-2"></i>Ograničena količina
-                    </span>
                 </div>
             </div>
 

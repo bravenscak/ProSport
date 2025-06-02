@@ -13,14 +13,25 @@
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
     }
-    .product-status {
-      font-size: 0.8rem;
+    .admin-content {
+      background: #f8f9fa;
+      min-height: 100vh;
+    }
+    .content-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e9ecef;
     }
     .product-thumbnail {
       width: 60px;
       height: 60px;
       object-fit: cover;
-      border-radius: 4px;
+      border-radius: 8px;
+    }
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 0.4rem 0.8rem;
     }
   </style>
 </head>
@@ -37,17 +48,12 @@
         <hr class="text-white">
 
         <ul class="nav nav-pills flex-column mb-auto">
-          <li>
-            <a th:href="@{/admin}" class="nav-link text-white">
-              <i class="bi bi-speedometer2 me-2"></i>Dashboard
-            </a>
-          </li>
-          <li>
+          <li class="nav-item">
             <a th:href="@{/admin/categories}" class="nav-link text-white">
               <i class="bi bi-grid-3x3-gap me-2"></i>Kategorije
             </a>
           </li>
-          <li>
+          <li class="nav-item">
             <a th:href="@{/admin/products}" class="nav-link text-white active">
               <i class="bi bi-box me-2"></i>Proizvodi
             </a>
@@ -78,11 +84,14 @@
       </div>
     </div>
 
-    <div class="col-md-9 col-lg-10">
+    <div class="col-md-9 col-lg-10 admin-content">
       <div class="p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h1 class="h2">Upravljanje proizvodima</h1>
-          <a th:href="@{/admin/products/new}" class="btn btn-primary">
+          <div>
+            <h1 class="h2 mb-0">Upravljanje proizvodima</h1>
+            <p class="text-muted mb-0">Dodajte, uredite ili obrišite proizvode u trgovini</p>
+          </div>
+          <a th:href="@{/admin/products/new}" class="btn btn-primary btn-lg">
             <i class="bi bi-plus-circle me-2"></i>Novi proizvod
           </a>
         </div>
@@ -99,146 +108,164 @@
           <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <h5 class="mb-0">Svi proizvodi</h5>
+        <div class="content-card">
+          <div class="card-header bg-white border-bottom p-4">
+            <h5 class="mb-0">
+              <i class="bi bi-box me-2 text-primary"></i>
+              Svi proizvodi
+            </h5>
           </div>
-          <div class="card-body">
-            <div th:if="${products == null or #lists.isEmpty(products)}" class="text-center py-4">
-              <i class="bi bi-inbox display-1 text-muted"></i>
-              <h4 class="mt-3 text-muted">Nema proizvoda</h4>
-              <p class="text-muted">Dodajte prvi proizvod da biste počeli.</p>
-              <a th:href="@{/admin/products/new}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-2"></i>Dodaj proizvod
+          <div class="card-body p-0">
+            <div th:if="${products == null or #lists.isEmpty(products)}" class="text-center py-5">
+              <div class="mb-4">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+              </div>
+              <h4 class="text-muted mb-3">Nema proizvoda</h4>
+              <p class="text-muted mb-4">Dodajte prvi proizvod da biste počeli prodavati.</p>
+              <a th:href="@{/admin/products/new}" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-circle me-2"></i>Dodaj prvi proizvod
               </a>
             </div>
 
-            <div th:if="${products != null and not #lists.isEmpty(products)}" class="table-responsive">
-              <table class="table table-hover">
-                <thead class="table-light">
-                <tr>
-                  <th>Slika</th>
-                  <th>Naziv</th>
-                  <th>Brand</th>
-                  <th>Kategorija</th>
-                  <th>Cijena</th>
-                  <th>Zaliha</th>
-                  <th>Status</th>
-                  <th class="text-end">Akcije</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="product : ${products}">
-                  <td>
-                    <img th:if="${product.imageUrl != null}"
-                         th:src="${product.imageUrl}"
-                         th:alt="${product.name}"
-                         class="product-thumbnail">
-                    <div th:unless="${product.imageUrl != null}"
-                         class="product-thumbnail bg-light d-flex align-items-center justify-content-center">
-                      <i class="bi bi-image text-muted"></i>
-                    </div>
-                  </td>
-                  <td>
-                    <strong th:text="${product.name}">Naziv proizvoda</strong>
-                    <br>
-                    <small class="text-muted" th:text="${#strings.abbreviate(product.description, 50)}">
-                      Kratki opis proizvoda...
-                    </small>
-                  </td>
-                  <td th:text="${product.brand}">Brand</td>
-                  <td>
-                    <span class="badge bg-secondary" th:text="${product.categoryName}">Kategorija</span>
-                  </td>
-                  <td>
-                    <strong th:text="${product.price + ' €'}">0.00 €</strong>
-                  </td>
-                  <td>
-                    <span th:if="${product.stockQuantity > 0}"
-                          class="badge bg-success product-status">
-                        <span th:text="${product.stockQuantity}">0</span> kom
-                    </span>
-                    <span th:if="${product.stockQuantity == 0}"
-                          class="badge bg-danger product-status">
-                        Nema na zalihi
-                    </span>
-                  </td>
-                  <td>
-                    <span th:if="${product.available}" class="badge bg-success product-status">
-                        Aktivan
-                    </span>
-                    <span th:unless="${product.available}" class="badge bg-warning product-status">
-                        Neaktivan
-                    </span>
-                  </td>
-                  <td class="text-end">
-                    <div class="btn-group" role="group">
-                      <a th:href="@{/products/{id}(id=${product.id})}"
-                         class="btn btn-sm btn-outline-info"
-                         target="_blank" title="Pregled">
-                        <i class="bi bi-eye"></i>
-                      </a>
-                      <a th:href="@{/admin/products/{id}/edit(id=${product.id})}"
-                         class="btn btn-sm btn-outline-primary"
-                         title="Uredi">
-                        <i class="bi bi-pencil"></i>
-                      </a>
-                      <button type="button" class="btn btn-sm btn-outline-danger"
-                              data-bs-toggle="modal"
-                              th:data-bs-target="'#deleteModal' + ${product.id}"
-                              title="Obriši">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </div>
+            <div th:if="${products != null and not #lists.isEmpty(products)}">
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead class="table-light">
+                  <tr>
+                    <th class="px-4 py-3">Slika</th>
+                    <th class="py-3">Proizvod</th>
+                    <th class="py-3">Kategorija</th>
+                    <th class="py-3">Cijena</th>
+                    <th class="py-3">Zaliha</th>
+                    <th class="py-3">Status</th>
+                    <th class="text-end px-4 py-3">Akcije</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr th:each="product : ${products}">
+                    <td class="px-4 py-3">
+                      <img th:if="${product.imageUrl != null}"
+                           th:src="${product.imageUrl}"
+                           th:alt="${product.name}"
+                           class="product-thumbnail">
+                      <div th:unless="${product.imageUrl != null}"
+                           class="product-thumbnail bg-light d-flex align-items-center justify-content-center">
+                        <i class="bi bi-image text-muted"></i>
+                      </div>
+                    </td>
+                    <td class="py-3">
+                      <div>
+                        <strong th:text="${product.name}">Naziv proizvoda</strong>
+                        <div class="text-muted small mt-1" th:text="${product.brand}">Brand</div>
+                        <small class="text-muted" th:text="${#strings.abbreviate(product.description, 50)}">
+                          Kratki opis proizvoda...
+                        </small>
+                      </div>
+                    </td>
+                    <td class="py-3">
+                      <span class="badge bg-secondary bg-opacity-10 text-secondary status-badge" th:text="${product.categoryName}">Kategorija</span>
+                    </td>
+                    <td class="py-3">
+                      <strong class="text-primary" th:text="${product.price + ' €'}">0.00 €</strong>
+                    </td>
+                    <td class="py-3">
+                      <span th:if="${product.stockQuantity > 0}"
+                            class="badge bg-success bg-opacity-10 text-success status-badge">
+                          <i class="bi bi-check-circle me-1"></i>
+                          <span th:text="${product.stockQuantity}">0</span> kom
+                      </span>
+                      <span th:if="${product.stockQuantity == 0}"
+                            class="badge bg-danger bg-opacity-10 text-danger status-badge">
+                          <i class="bi bi-x-circle me-1"></i>
+                          Nema na zalihi
+                      </span>
+                    </td>
+                    <td class="py-3">
+                      <span th:if="${product.available}" class="badge bg-success bg-opacity-10 text-success status-badge">
+                          <i class="bi bi-check-circle me-1"></i>Aktivan
+                      </span>
+                      <span th:unless="${product.available}" class="badge bg-warning bg-opacity-10 text-warning status-badge">
+                          <i class="bi bi-pause-circle me-1"></i>Neaktivan
+                      </span>
+                    </td>
+                    <td class="text-end px-4 py-3">
+                      <div class="btn-group" role="group">
+                        <a th:href="@{/products/{id}(id=${product.id})}"
+                           class="btn btn-sm btn-outline-info"
+                           target="_blank" title="Pregled proizvoda">
+                          <i class="bi bi-eye"></i>
+                        </a>
+                        <a th:href="@{/admin/products/{id}/edit(id=${product.id})}"
+                           class="btn btn-sm btn-outline-primary"
+                           title="Uredi proizvod">
+                          <i class="bi bi-pencil"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                data-bs-toggle="modal"
+                                th:data-bs-target="'#deleteModal' + ${product.id}"
+                                title="Obriši proizvod">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
 
-                    <div class="modal fade" th:id="'deleteModal' + ${product.id}" tabindex="-1">
-                      <div class="modal-dialog">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <h5 class="modal-title">Potvrda brisanja</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                          </div>
-                          <div class="modal-body">
-                            <div class="d-flex align-items-start gap-3">
-                              <img th:if="${product.imageUrl != null}"
-                                   th:src="${product.imageUrl}"
-                                   th:alt="${product.name}"
-                                   class="product-thumbnail">
-                              <div th:unless="${product.imageUrl != null}"
-                                   class="product-thumbnail bg-light d-flex align-items-center justify-content-center">
-                                <i class="bi bi-image text-muted"></i>
-                              </div>
-                              <div>
-                                <p class="mb-2">Jeste li sigurni da želite obrisati proizvod:</p>
-                                <strong th:text="${product.name}">proizvod</strong>
-                                <br><small class="text-muted">Ova akcija se ne može poništiti. Slika proizvoda će također biti obrisana.</small>
-                              </div>
+                      <div class="modal fade" th:id="'deleteModal' + ${product.id}" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                          <div class="modal-content">
+                            <div class="modal-header border-0">
+                              <h5 class="modal-title">
+                                <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                                Potvrda brisanja
+                              </h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
-                          </div>
-                          <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                              Odustani
-                            </button>
-                            <form th:action="@{/admin/products/{id}/delete(id=${product.id})}"
-                                  method="post" class="d-inline">
-                              <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash me-2"></i>Obriši proizvod
+                            <div class="modal-body">
+                              <div class="d-flex align-items-start gap-3 mb-3">
+                                <img th:if="${product.imageUrl != null}"
+                                     th:src="${product.imageUrl}"
+                                     th:alt="${product.name}"
+                                     class="product-thumbnail">
+                                <div th:unless="${product.imageUrl != null}"
+                                     class="product-thumbnail bg-light d-flex align-items-center justify-content-center">
+                                  <i class="bi bi-image text-muted"></i>
+                                </div>
+                                <div>
+                                  <p class="mb-1">Jeste li sigurni da želite obrisati proizvod:</p>
+                                  <div class="bg-light p-2 rounded">
+                                    <strong th:text="${product.name}">proizvod</strong>
+                                  </div>
+                                </div>
+                              </div>
+                              <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Ova akcija se ne može poništiti.
+                              </small>
+                            </div>
+                            <div class="modal-footer border-0">
+                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle me-2"></i>Odustani
                               </button>
-                            </form>
+                              <form th:action="@{/admin/products/{id}/delete(id=${product.id})}"
+                                    method="post" class="d-inline">
+                                <button type="submit" class="btn btn-danger">
+                                  <i class="bi bi-trash me-2"></i>Obriši proizvod
+                                </button>
+                              </form>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                </tr>
-                </tbody>
-              </table>
-            </div>
+                    </td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
 
-            <div th:if="${products != null and not #lists.isEmpty(products)}" class="mt-3">
-              <small class="text-muted">
-                Ukupno proizvoda: <strong th:text="${products.size()}">0</strong>
-              </small>
+              <div class="px-4 py-3 bg-light border-top">
+                <small class="text-muted">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Ukupno proizvoda: <strong th:text="${products.size()}">0</strong>
+                </small>
+              </div>
             </div>
           </div>
         </div>

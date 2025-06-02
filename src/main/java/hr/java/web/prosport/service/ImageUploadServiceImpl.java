@@ -36,12 +36,11 @@ public class ImageUploadServiceImpl implements ImageUploadService {
         log.info("Starting image upload for file: {}", file.getOriginalFilename());
 
         validateFile(file);
-
         createUploadDirectoryIfNotExists();
 
         String uniqueFilename = generateUniqueFilename(file.getOriginalFilename());
-
         Path filePath = Paths.get(uploadDir).resolve(uniqueFilename);
+
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
         String imageUrl = "/uploads/" + uniqueFilename;
@@ -75,11 +74,12 @@ public class ImageUploadServiceImpl implements ImageUploadService {
     @Override
     public boolean isValidImage(MultipartFile file) {
         if (file == null || file.isEmpty()) {
+            log.warn("File is null or empty");
             return false;
         }
 
         if (file.getSize() > MAX_FILE_SIZE) {
-            log.warn("File size too large: {} bytes", file.getSize());
+            log.warn("File size too large: {} bytes (max: {} bytes)", file.getSize(), MAX_FILE_SIZE);
             return false;
         }
 
@@ -96,6 +96,9 @@ public class ImageUploadServiceImpl implements ImageUploadService {
                 log.warn("Invalid file extension: {}", extension);
                 return false;
             }
+        } else {
+            log.warn("Original filename is null");
+            return false;
         }
 
         return true;
@@ -104,15 +107,15 @@ public class ImageUploadServiceImpl implements ImageUploadService {
     @Override
     public String generateUniqueFilename(String originalFilename) {
         String extension = getFileExtension(originalFilename);
-        String uuid = UUID.randomUUID().toString();
+        String uuid = UUID.randomUUID().toString().replace("-", "");
         String timestamp = String.valueOf(System.currentTimeMillis());
 
-        return uuid + "_" + timestamp + extension;
+        return "img_" + timestamp + "_" + uuid + extension;
     }
 
     private void validateFile(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("Datoteka je prazna");
+            throw new IllegalArgumentException("Datoteka je prazna ili nije odabrana");
         }
 
         if (!isValidImage(file)) {

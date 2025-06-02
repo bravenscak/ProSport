@@ -15,6 +15,16 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
+        .admin-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .content-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e9ecef;
+        }
         .image-preview {
             max-width: 200px;
             max-height: 200px;
@@ -27,6 +37,7 @@
             padding: 20px;
             text-align: center;
             transition: border-color 0.3s;
+            cursor: pointer;
         }
         .image-upload-area:hover {
             border-color: #0d6efd;
@@ -50,12 +61,12 @@
                 <hr class="text-white">
 
                 <ul class="nav nav-pills flex-column mb-auto">
-                    <li>
+                    <li class="nav-item">
                         <a th:href="@{/admin/categories}" class="nav-link text-white">
                             <i class="bi bi-grid-3x3-gap me-2"></i>Kategorije
                         </a>
                     </li>
-                    <li>
+                    <li class="nav-item">
                         <a th:href="@{/admin/products}" class="nav-link text-white active">
                             <i class="bi bi-box me-2"></i>Proizvodi
                         </a>
@@ -86,22 +97,40 @@
             </div>
         </div>
 
-        <div class="col-md-9 col-lg-10">
+        <div class="col-md-9 col-lg-10 admin-content">
             <div class="p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1 class="h2" th:text="${product.id != null ? 'Uredi proizvod' : 'Novi proizvod'}">Novi proizvod</h1>
+                    <div>
+                        <h1 class="h2 mb-0" th:text="${product.id != null ? 'Uredi proizvod' : 'Novi proizvod'}">Novi proizvod</h1>
+                        <p class="text-muted mb-0">Unesite podatke o proizvodu</p>
+                    </div>
                     <a th:href="@{/admin/products}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-2"></i>Nazad na proizvode
                     </a>
                 </div>
 
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>
+                    <span th:text="${success}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
                 <div class="row">
                     <div class="col-lg-8">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">Podaci o proizvodu</h5>
+                        <div class="content-card">
+                            <div class="card-header bg-white border-bottom p-4">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-box me-2 text-primary"></i>
+                                    Podaci o proizvodu
+                                </h5>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body p-4">
                                 <form th:action="${product.id != null ? '/admin/products/' + product.id : '/admin/products'}"
                                       method="post" th:object="${product}" id="productForm" enctype="multipart/form-data">
 
@@ -202,13 +231,13 @@
                     </div>
 
                     <div class="col-lg-4">
-                        <div class="card">
-                            <div class="card-header">
+                        <div class="content-card">
+                            <div class="card-header bg-white border-bottom p-4">
                                 <h5 class="mb-0">
-                                    <i class="bi bi-image me-2"></i>Slika proizvoda
+                                    <i class="bi bi-image me-2 text-primary"></i>Slika proizvoda
                                 </h5>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body p-4">
                                 <div th:if="${product.imageUrl != null}" class="mb-3">
                                     <label class="form-label">Trenutna slika:</label>
                                     <div class="text-center">
@@ -225,7 +254,7 @@
                                     </label>
                                     <div class="image-upload-area" id="imageUploadArea">
                                         <input type="file" class="form-control" id="image" name="image"
-                                               accept="image/*" style="display: none;">
+                                               accept="image/*" style="display: none;" form="productForm">
                                         <i class="bi bi-cloud-upload display-4 text-muted mb-2"></i>
                                         <p class="mb-2">Kliknite ili povucite sliku ovdje</p>
                                         <small class="text-muted">Podržane su JPG, PNG i GIF datoteke (max 10MB)</small>
@@ -290,41 +319,59 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
 <script>
+    console.log('Script loaded!');
+
     const imageInput = document.getElementById('image');
     const uploadArea = document.getElementById('imageUploadArea');
     const newImagePreview = document.getElementById('newImagePreview');
     const previewImg = document.getElementById('previewImg');
 
-    uploadArea.addEventListener('click', () => imageInput.click());
-
-    imageInput.addEventListener('change', handleImageSelect);
-
-    uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.classList.add('dragover');
+    console.log('Elements found:', {
+        imageInput: !!imageInput,
+        uploadArea: !!uploadArea,
+        newImagePreview: !!newImagePreview,
+        previewImg: !!previewImg
     });
 
-    uploadArea.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-    });
+    if (uploadArea && imageInput) {
+        uploadArea.addEventListener('click', () => {
+            console.log('Upload area clicked');
+            imageInput.click();
+        });
 
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
+        imageInput.addEventListener('change', handleImageSelect);
 
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            imageInput.files = files;
-            handleImageSelect();
-        }
-    });
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                imageInput.files = files;
+                handleImageSelect();
+            }
+        });
+    }
 
     function handleImageSelect() {
+        console.log('handleImageSelect called');
         const file = imageInput.files[0];
+        console.log('Selected file:', file);
+
         if (file && file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = function(e) {
+                console.log('Image loaded for preview');
                 previewImg.src = e.target.result;
                 newImagePreview.style.display = 'block';
             };
@@ -333,16 +380,18 @@
     }
 
     function clearImagePreview() {
+        console.log('Clearing image preview');
         imageInput.value = '';
         newImagePreview.style.display = 'none';
         previewImg.src = '';
     }
 
     function createNewCategory() {
+        console.log('Creating new category...');
         const name = $('#newCategoryName').val();
-        const description = $('#newCategoryDescription').val();
+        const description = $('#newCategoryDescription').val() || '';
 
-        if (!name) {
+        if (!name.trim()) {
             alert('Naziv kategorije je obavezan!');
             return;
         }
@@ -360,21 +409,33 @@
             url: '/admin/categories/quick',
             method: 'POST',
             data: {
-                name: name,
-                description: description
+                name: name.trim(),
+                description: description.trim()
             },
             success: function(category) {
-                $('#categoryId').append(new Option(category.name, category.id));
-                $('#categoryId').val(category.id);
+                console.log('Category created successfully:', category);
+
+                $('#categoryId').append(new Option(category.name, category.id, true, true));
 
                 $('#newCategoryModal').modal('hide');
                 $('#newCategoryForm')[0].reset();
 
-                alert('Kategorija je uspješno kreirana!');
+                const alertHtml = `
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Kategorija "${category.name}" je uspješno kreirana!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+
+                $('#productForm').before(alertHtml);
+
+                setTimeout(() => {
+                    $('.alert-success').fadeOut();
+                }, 5000);
             },
             error: function(xhr, status, error) {
-                console.error('Error:', error);
-                console.log('Response:', xhr.responseText);
+                console.error('Error creating category:', xhr.responseText);
                 alert('Greška pri kreiranju kategorije: ' + (xhr.responseText || error));
             }
         });

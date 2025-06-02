@@ -24,8 +24,8 @@ public class AdminController {
     private final ImageUploadService imageUploadService;
 
     @GetMapping
-    public String adminDashboard(Model model) {
-        return "admin/products";
+    public String adminRoot() {
+        return "redirect:/admin/products";
     }
 
     @GetMapping("/categories")
@@ -80,6 +80,13 @@ public class AdminController {
             attributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/admin/categories";
+    }
+
+    @PostMapping("/categories/quick")
+    @ResponseBody
+    public CategoryDto createQuickCategory(@RequestParam String name, @RequestParam String description) {
+        CategoryDto categoryDto = new CategoryDto(name, description);
+        return categoryService.createCategory(categoryDto);
     }
 
     @GetMapping("/products")
@@ -173,6 +180,7 @@ public class AdminController {
             ProductDto product = productService.findById(id)
                     .orElseThrow(() -> new RuntimeException("Product not found"));
 
+            // Obriši sliku ako postoji
             if (product.getImageUrl() != null) {
                 imageUploadService.deleteImage(product.getImageUrl());
             }
@@ -183,12 +191,5 @@ public class AdminController {
             attributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/admin/products";
-    }
-
-    @PostMapping("/categories/quick")
-    @ResponseBody
-    public CategoryDto createQuickCategory(@RequestParam String name, @RequestParam String description) {
-        CategoryDto categoryDto = new CategoryDto(name, description);
-        return categoryService.createCategory(categoryDto);
     }
 }
