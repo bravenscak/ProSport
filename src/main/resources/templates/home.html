@@ -27,6 +27,12 @@
         .product-card:hover {
             transform: translateY(-3px);
         }
+        .home-product-image {
+            height: 200px;
+            width: 100%;
+            object-fit: cover;
+            border-radius: 8px 8px 0 0;
+        }
     </style>
 </head>
 <body>
@@ -151,29 +157,61 @@
 <section class="py-5 bg-light">
     <div class="container">
         <h2 class="text-center mb-5">Izdvojeni proizvodi</h2>
-        <div class="row g-4">
+
+        <div th:if="${products == null or #lists.isEmpty(products)}" class="text-center py-5">
+            <i class="bi bi-box display-1 text-muted"></i>
+            <h4 class="mt-3 text-muted">Nema dostupnih proizvoda</h4>
+            <p class="text-muted">Trenutno nema proizvoda za prikaz. Molimo pokušajte kasnije.</p>
+        </div>
+
+        <div th:if="${products != null and not #lists.isEmpty(products)}" class="row g-4">
             <div class="col-lg-3 col-md-6" th:each="product : ${products}">
                 <div class="card product-card h-100 border-0 shadow-sm">
-                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-                         style="height: 200px;">
-                        <i class="bi bi-image display-4 text-muted"></i>
+                    <div class="position-relative">
+                        <img th:if="${product.imageUrl != null}"
+                             th:src="${product.imageUrl}"
+                             th:alt="${product.name}"
+                             class="home-product-image">
+                        <div th:unless="${product.imageUrl != null}"
+                             class="bg-light d-flex align-items-center justify-content-center home-product-image">
+                            <i class="bi bi-image display-4 text-muted"></i>
+                        </div>
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span th:if="${product.stockQuantity > 0}" class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>Dostupno
+                            </span>
+                            <span th:if="${product.stockQuantity == 0}" class="badge bg-danger">
+                                <i class="bi bi-x-circle me-1"></i>Nedostupno
+                            </span>
+                        </div>
                     </div>
-                    <div class="card-body">
+
+                    <div class="card-body d-flex flex-column">
                         <h6 class="card-subtitle mb-2 text-muted" th:text="${product.brand}">Brand</h6>
                         <h5 class="card-title" th:text="${product.name}">Naziv proizvoda</h5>
-                        <p class="card-text text-muted small" th:text="${product.description}">Opis</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="h5 mb-0 text-primary" th:text="${product.price + ' €'}">Cijena</span>
+
+                        <small class="text-muted mb-2">
+                            <i class="bi bi-tag me-1"></i>
+                            <span th:text="${product.categoryName}">Kategorija</span>
+                        </small>
+
+                        <p class="card-text text-muted small flex-grow-1" th:text="${#strings.abbreviate(product.description, 60)}">Opis</p>
+
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            <span class="h5 mb-0 text-primary fw-bold" th:text="${product.price + ' €'}">Cijena</span>
                             <a th:href="@{/products/{id}(id=${product.id})}"
-                               class="btn btn-primary btn-sm">Detalji</a>
+                               class="btn btn-primary btn-sm">
+                                <i class="bi bi-eye me-1"></i>Detalji
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="text-center mt-4" th:if="${products != null and not #lists.isEmpty(products)}">
             <a th:href="@{/products}" class="btn btn-outline-primary btn-lg">
-                Pogledaj sve proizvode
+                <i class="bi bi-grid me-2"></i>Pogledaj sve proizvode
             </a>
         </div>
     </div>

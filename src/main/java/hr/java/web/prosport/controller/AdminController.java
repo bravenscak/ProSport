@@ -3,12 +3,16 @@ package hr.java.web.prosport.controller;
 import hr.java.web.prosport.dto.CategoryDto;
 import hr.java.web.prosport.dto.ProductDto;
 import hr.java.web.prosport.service.CategoryService;
+import hr.java.web.prosport.service.ImageUploadService;
 import hr.java.web.prosport.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.io.IOException;
 
 @Controller
 @RequestMapping("/admin")
@@ -17,10 +21,11 @@ public class AdminController {
 
     private final CategoryService categoryService;
     private final ProductService productService;
+    private final ImageUploadService imageUploadService;
 
     @GetMapping
-    public String adminDashboard() {
-        return "redirect:/admin/products";
+    public String adminDashboard(Model model) {
+        return "admin/products";
     }
 
     @GetMapping("/categories")
@@ -77,7 +82,6 @@ public class AdminController {
         return "redirect:/admin/categories";
     }
 
-    // PROIZVODI
     @GetMapping("/products")
     public String manageProducts(Model model) {
         model.addAttribute("products", productService.findAll());
@@ -92,12 +96,28 @@ public class AdminController {
     }
 
     @PostMapping("/products")
-    public String saveProduct(@ModelAttribute ProductDto productDto, RedirectAttributes attributes) {
+    public String saveProduct(@ModelAttribute ProductDto productDto,
+                              @RequestParam(value = "image", required = false) MultipartFile imageFile,
+                              RedirectAttributes attributes) {
         try {
+            if (imageFile != null && !imageFile.isEmpty()) {
+                if (!imageUploadService.isValidImage(imageFile)) {
+                    attributes.addFlashAttribute("error", "Neispravna datoteka. Molimo uploadajte JPG, PNG, GIF ili WebP sliku manju od 10MB.");
+                    return "redirect:/admin/products/new";
+                }
+
+                String imageUrl = imageUploadService.uploadImage(imageFile);
+                productDto.setImageUrl(imageUrl);
+            }
+
             productService.createProduct(productDto);
             attributes.addFlashAttribute("success", "Proizvod je uspješno kreiran!");
+        } catch (IOException e) {
+            attributes.addFlashAttribute("error", "Greška pri uploadu slike: " + e.getMessage());
+            return "redirect:/admin/products/new";
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/admin/products/new";
         }
         return "redirect:/admin/products";
     }
@@ -113,12 +133,36 @@ public class AdminController {
 
     @PostMapping("/products/{id}")
     public String updateProduct(@PathVariable Long id, @ModelAttribute ProductDto productDto,
+                                @RequestParam(value = "image", required = false) MultipartFile imageFile,
                                 RedirectAttributes attributes) {
         try {
+            ProductDto existingProduct = productService.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
+
+            if (imageFile != null && !imageFile.isEmpty()) {
+                if (!imageUploadService.isValidImage(imageFile)) {
+                    attributes.addFlashAttribute("error", "Neispravna datoteka. Molimo uploadajte JPG, PNG, GIF ili WebP sliku manju od 10MB.");
+                    return "redirect:/admin/products/" + id + "/edit";
+                }
+
+                if (existingProduct.getImageUrl() != null) {
+                    imageUploadService.deleteImage(existingProduct.getImageUrl());
+                }
+
+                String imageUrl = imageUploadService.uploadImage(imageFile);
+                productDto.setImageUrl(imageUrl);
+            } else {
+                productDto.setImageUrl(existingProduct.getImageUrl());
+            }
+
             productService.updateProduct(id, productDto);
             attributes.addFlashAttribute("success", "Proizvod je uspješno ažuriran!");
+        } catch (IOException e) {
+            attributes.addFlashAttribute("error", "Greška pri uploadu slike: " + e.getMessage());
+            return "redirect:/admin/products/" + id + "/edit";
         } catch (RuntimeException e) {
             attributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/admin/products/" + id + "/edit";
         }
         return "redirect:/admin/products";
     }
@@ -126,6 +170,13 @@ public class AdminController {
     @PostMapping("/products/{id}/delete")
     public String deleteProduct(@PathVariable Long id, RedirectAttributes attributes) {
         try {
+            ProductDto product = productService.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
+
+            if (product.getImageUrl() != null) {
+                imageUploadService.deleteImage(product.getImageUrl());
+            }
+
             productService.deleteProduct(id);
             attributes.addFlashAttribute("success", "Proizvod je uspješno obrisan!");
         } catch (RuntimeException e) {

@@ -46,6 +46,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public List<ProductDto> searchProducts(String query) {
+        return productRepository.findBySearchQuery(query).stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    @Override
     public ProductDto createProduct(ProductDto productDto) {
         Category category = categoryRepository.findById(productDto.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Kategorija nije pronađena"));
@@ -74,6 +81,10 @@ public class ProductServiceImpl implements ProductService {
         existingProduct.setCategory(category);
         existingProduct.setAvailable(productDto.getAvailable() != null ? productDto.getAvailable() : true);
 
+        if (productDto.getImageUrl() != null) {
+            existingProduct.setImageUrl(productDto.getImageUrl());
+        }
+
         Product updatedProduct = productRepository.save(existingProduct);
         return mapToDTO(updatedProduct);
     }
@@ -94,6 +105,7 @@ public class ProductServiceImpl implements ProductService {
         product.setStockQuantity(dto.getStockQuantity());
         product.setBrand(dto.getBrand());
         product.setAvailable(dto.getAvailable() != null ? dto.getAvailable() : true);
+        product.setImageUrl(dto.getImageUrl());
         return product;
     }
 
@@ -106,6 +118,7 @@ public class ProductServiceImpl implements ProductService {
         dto.setStockQuantity(product.getStockQuantity());
         dto.setBrand(product.getBrand());
         dto.setAvailable(product.isAvailable());
+        dto.setImageUrl(product.getImageUrl());
 
         if (product.getCategory() != null) {
             dto.setCategoryId(product.getCategory().getId());

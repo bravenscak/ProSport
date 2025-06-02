@@ -15,6 +15,26 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .image-upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+        .image-upload-area:hover {
+            border-color: #0d6efd;
+        }
+        .image-upload-area.dragover {
+            border-color: #0d6efd;
+            background-color: #f8f9fa;
+        }
     </style>
 </head>
 <body>
@@ -75,7 +95,7 @@
                     </a>
                 </div>
 
-                <div class="row justify-content-center">
+                <div class="row">
                     <div class="col-lg-8">
                         <div class="card">
                             <div class="card-header">
@@ -83,7 +103,7 @@
                             </div>
                             <div class="card-body">
                                 <form th:action="${product.id != null ? '/admin/products/' + product.id : '/admin/products'}"
-                                      method="post" th:object="${product}" id="productForm">
+                                      method="post" th:object="${product}" id="productForm" enctype="multipart/form-data">
 
                                     <div class="row">
                                         <div class="col-md-8 mb-3">
@@ -180,6 +200,55 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-image me-2"></i>Slika proizvoda
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div th:if="${product.imageUrl != null}" class="mb-3">
+                                    <label class="form-label">Trenutna slika:</label>
+                                    <div class="text-center">
+                                        <img th:src="${product.imageUrl}"
+                                             th:alt="${product.name}"
+                                             class="image-preview border">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="image" class="form-label">
+                                        <span th:if="${product.imageUrl == null}">Dodaj sliku proizvoda</span>
+                                        <span th:if="${product.imageUrl != null}">Promijeni sliku</span>
+                                    </label>
+                                    <div class="image-upload-area" id="imageUploadArea">
+                                        <input type="file" class="form-control" id="image" name="image"
+                                               accept="image/*" style="display: none;">
+                                        <i class="bi bi-cloud-upload display-4 text-muted mb-2"></i>
+                                        <p class="mb-2">Kliknite ili povucite sliku ovdje</p>
+                                        <small class="text-muted">Podržane su JPG, PNG i GIF datoteke (max 10MB)</small>
+                                    </div>
+                                </div>
+
+                                <div id="newImagePreview" class="text-center" style="display: none;">
+                                    <label class="form-label">Nova slika:</label>
+                                    <div>
+                                        <img id="previewImg" class="image-preview border">
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="clearImagePreview()">
+                                        <i class="bi bi-trash me-1"></i>Ukloni
+                                    </button>
+                                </div>
+
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Preporučena veličina: 800x600 piksela
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -221,6 +290,54 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
 <script>
+    const imageInput = document.getElementById('image');
+    const uploadArea = document.getElementById('imageUploadArea');
+    const newImagePreview = document.getElementById('newImagePreview');
+    const previewImg = document.getElementById('previewImg');
+
+    uploadArea.addEventListener('click', () => imageInput.click());
+
+    imageInput.addEventListener('change', handleImageSelect);
+
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            imageInput.files = files;
+            handleImageSelect();
+        }
+    });
+
+    function handleImageSelect() {
+        const file = imageInput.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                newImagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function clearImagePreview() {
+        imageInput.value = '';
+        newImagePreview.style.display = 'none';
+        previewImg.src = '';
+    }
+
     function createNewCategory() {
         const name = $('#newCategoryName').val();
         const description = $('#newCategoryDescription').val();
