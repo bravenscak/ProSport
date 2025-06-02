@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title th:text="${product.id != null ? 'Uredi proizvod' : 'Novi proizvod'} + ' - ProSport Admin'">Novi proizvod - ProSport Admin</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        .admin-sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 col-lg-2 px-0">
+            <div class="admin-sidebar d-flex flex-column p-3">
+                <a href="#" class="d-flex align-items-center mb-3 text-white text-decoration-none">
+                    <i class="bi bi-trophy-fill me-2"></i>
+                    <span class="fs-4 fw-bold">ProSport Admin</span>
+                </a>
+
+                <hr class="text-white">
+
+                <ul class="nav nav-pills flex-column mb-auto">
+                    <li>
+                        <a th:href="@{/admin/categories}" class="nav-link text-white">
+                            <i class="bi bi-grid-3x3-gap me-2"></i>Kategorije
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="@{/admin/products}" class="nav-link text-white active">
+                            <i class="bi bi-box me-2"></i>Proizvodi
+                        </a>
+                    </li>
+                </ul>
+
+                <hr class="text-white">
+
+                <div class="dropdown">
+                    <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+                       data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle me-2"></i>
+                        <span sec:authentication="name">Admin</span>
+                    </a>
+                    <ul class="dropdown-menu text-small shadow">
+                        <li><a class="dropdown-item" th:href="@{/}">
+                            <i class="bi bi-house me-2"></i>Početna stranica</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form th:action="@{/logout}" method="post" class="d-inline">
+                                <button type="submit" class="dropdown-item">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Odjava
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9 col-lg-10">
+            <div class="p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1 class="h2" th:text="${product.id != null ? 'Uredi proizvod' : 'Novi proizvod'}">Novi proizvod</h1>
+                    <a th:href="@{/admin/products}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Nazad na proizvode
+                    </a>
+                </div>
+
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Podaci o proizvodu</h5>
+                            </div>
+                            <div class="card-body">
+                                <form th:action="${product.id != null ? '/admin/products/' + product.id : '/admin/products'}"
+                                      method="post" th:object="${product}" id="productForm">
+
+                                    <div class="row">
+                                        <div class="col-md-8 mb-3">
+                                            <label for="name" class="form-label">
+                                                <i class="bi bi-tag me-2"></i>Naziv proizvoda *
+                                            </label>
+                                            <input type="text" class="form-control" id="name" th:field="*{name}"
+                                                   placeholder="Unesite naziv proizvoda" required>
+                                        </div>
+
+                                        <div class="col-md-4 mb-3">
+                                            <label for="brand" class="form-label">
+                                                <i class="bi bi-award me-2"></i>Brand
+                                            </label>
+                                            <input type="text" class="form-control" id="brand" th:field="*{brand}"
+                                                   placeholder="npr. Nike, Adidas">
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="description" class="form-label">
+                                            <i class="bi bi-card-text me-2"></i>Opis proizvoda
+                                        </label>
+                                        <textarea class="form-control" id="description" th:field="*{description}"
+                                                  rows="4" placeholder="Detaljni opis proizvoda"></textarea>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="categoryId" class="form-label">
+                                                <i class="bi bi-grid-3x3-gap me-2"></i>Kategorija *
+                                            </label>
+                                            <div class="input-group">
+                                                <select class="form-select" id="categoryId" th:field="*{categoryId}" required>
+                                                    <option value="">Odaberite kategoriju</option>
+                                                    <option th:each="category : ${categories}"
+                                                            th:value="${category.id}"
+                                                            th:text="${category.name}">Kategorija</option>
+                                                </select>
+                                                <button type="button" class="btn btn-outline-primary"
+                                                        data-bs-toggle="modal" data-bs-target="#newCategoryModal">
+                                                    <i class="bi bi-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6 mb-3">
+                                            <label for="price" class="form-label">
+                                                <i class="bi bi-currency-euro me-2"></i>Cijena (€) *
+                                            </label>
+                                            <input type="number" step="0.01" min="0" class="form-control"
+                                                   id="price" th:field="*{price}"
+                                                   placeholder="0.00" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="stockQuantity" class="form-label">
+                                                <i class="bi bi-box-seam me-2"></i>Količina na zalihi
+                                            </label>
+                                            <input type="number" min="0" class="form-control"
+                                                   id="stockQuantity" th:field="*{stockQuantity}"
+                                                   placeholder="0" value="0">
+                                        </div>
+
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">
+                                                <i class="bi bi-toggle-on me-2"></i>Status proizvoda
+                                            </label>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox"
+                                                       id="available" th:field="*{available}"
+                                                       th:checked="${product.available == null or product.available}">
+                                                <label class="form-check-label" for="available">
+                                                    Proizvod je aktivan
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between">
+                                        <a th:href="@{/admin/products}" class="btn btn-secondary">
+                                            <i class="bi bi-x-circle me-2"></i>Odustani
+                                        </a>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-check-circle me-2"></i>
+                                            <span th:text="${product.id != null ? 'Ažuriraj proizvod' : 'Kreiraj proizvod'}">
+                                                    Kreiraj proizvod
+                                                </span>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="newCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova kategorija</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newCategoryForm">
+                    <div class="mb-3">
+                        <label for="newCategoryName" class="form-label">Naziv kategorije *</label>
+                        <input type="text" class="form-control" id="newCategoryName"
+                               placeholder="Unesite naziv kategorije" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newCategoryDescription" class="form-label">Opis kategorije</label>
+                        <textarea class="form-control" id="newCategoryDescription"
+                                  rows="3" placeholder="Unesite opis kategorije"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Odustani</button>
+                <button type="button" class="btn btn-primary" onclick="createNewCategory()">
+                    <i class="bi bi-plus-circle me-2"></i>Kreiraj kategoriju
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<script>
+    function createNewCategory() {
+        const name = $('#newCategoryName').val();
+        const description = $('#newCategoryDescription').val();
+
+        if (!name) {
+            alert('Naziv kategorije je obavezan!');
+            return;
+        }
+
+        const token = $('meta[name="_csrf"]').attr('content');
+        const header = $('meta[name="_csrf_header"]').attr('content');
+
+        $.ajaxSetup({
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader(header, token);
+            }
+        });
+
+        $.ajax({
+            url: '/admin/categories/quick',
+            method: 'POST',
+            data: {
+                name: name,
+                description: description
+            },
+            success: function(category) {
+                $('#categoryId').append(new Option(category.name, category.id));
+                $('#categoryId').val(category.id);
+
+                $('#newCategoryModal').modal('hide');
+                $('#newCategoryForm')[0].reset();
+
+                alert('Kategorija je uspješno kreirana!');
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+                console.log('Response:', xhr.responseText);
+                alert('Greška pri kreiranju kategorije: ' + (xhr.responseText || error));
+            }
+        });
+    }
+</script>
+</body>
+</html>

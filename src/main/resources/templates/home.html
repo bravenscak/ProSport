@@ -3,36 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Proizvodi - ProSport</title>
+    <title>ProSport - Sportska oprema</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
+        .hero-section {
+            background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+            color: white;
+            padding: 4rem 0;
+        }
+        .category-card {
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+        .category-card:hover {
+            transform: translateY(-5px);
+        }
         .product-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.3s ease;
         }
         .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        .category-filter {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 1rem;
-        }
-        .filter-badge {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            background: #e9ecef;
-            border-radius: 20px;
-            margin-bottom: 1rem;
-            border: 2px solid transparent;
-        }
-        .filter-badge.active {
-            background: #0d6efd;
-            color: white;
-            border-color: #0d6efd;
+            transform: translateY(-3px);
         }
     </style>
 </head>
@@ -115,127 +108,76 @@
     </div>
 </nav>
 
-<div class="container my-4">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="display-5 fw-bold">
-                <span th:if="${selectedCategory}" th:text="${selectedCategory.name}">Kategorija</span>
-                <span th:unless="${selectedCategory}">Svi proizvodi</span>
-            </h1>
-            <p class="lead text-muted" th:if="${selectedCategory}" th:text="${selectedCategory.description}">
-                Opis kategorije
-            </p>
-            <p class="lead text-muted" th:unless="${selectedCategory}">
-                Pregledajte našu kompletnu ponudu sportske opreme
-            </p>
-        </div>
-    </div>
-
-    <div class="row mb-4">
-        <div class="col">
-            <div class="category-filter">
-                <h6 class="mb-3"><i class="bi bi-funnel me-2"></i>Filtriraj po kategoriji:</h6>
-                <div class="d-flex flex-wrap gap-2">
-                    <a th:href="@{/products}"
-                       th:class="${selectedCategory == null ? 'filter-badge active text-decoration-none' : 'filter-badge text-decoration-none'}">
-                        Sve kategorije
-                    </a>
-                    <a th:each="category : ${categories}"
-                       th:href="@{/products(categoryId=${category.id})}"
-                       th:class="${selectedCategory?.id == category.id ? 'filter-badge active text-decoration-none' : 'filter-badge text-decoration-none'}"
-                       th:text="${category.name}">
-                        Kategorija
-                    </a>
-                </div>
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-3">Dobrodošli u ProSport</h1>
+                <p class="lead mb-4">Vaš pouzdani partner za kvalitetnu sportsku opremu.
+                    Pronađite sve što trebate za svoj omiljeni sport!</p>
+                <a href="#categories" class="btn btn-light btn-lg me-3">
+                    <i class="bi bi-arrow-down-circle me-2"></i>Istražite kategorije
+                </a>
+                <a th:href="@{/products}" class="btn btn-outline-light btn-lg">
+                    Svi proizvodi
+                </a>
+            </div>
+            <div class="col-lg-6 text-center">
+                <i class="bi bi-trophy display-1"></i>
             </div>
         </div>
     </div>
+</section>
 
-    <div class="row">
-        <div th:if="${products == null or #lists.isEmpty(products)}" class="col-12">
-            <div class="text-center py-5">
-                <i class="bi bi-search display-1 text-muted"></i>
-                <h3 class="mt-3 text-muted">Nema proizvoda</h3>
-                <p class="text-muted">Trenutno nema proizvoda u ovoj kategoriji.</p>
-                <a th:href="@{/products}" class="btn btn-primary">
-                    <i class="bi bi-arrow-left me-2"></i>Svi proizvodi
+<section id="categories" class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">Naše kategorije</h2>
+        <div class="row g-4">
+            <div class="col-md-4 col-sm-6" th:each="category : ${categories}">
+                <a th:href="@{/products(categoryId=${category.id})}" class="text-decoration-none">
+                    <div class="card category-card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="bi bi-grid-3x3-gap display-4 text-primary mb-3"></i>
+                            <h5 class="card-title" th:text="${category.name}">Kategorija</h5>
+                            <p class="card-text text-muted" th:text="${category.description}">Opis kategorije</p>
+                        </div>
+                    </div>
                 </a>
             </div>
         </div>
+    </div>
+</section>
 
-        <div class="col-lg-4 col-md-6 mb-4" th:each="product : ${products}">
-            <div class="card product-card h-100 border-0 shadow-sm">
-                <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-                     style="height: 250px;">
-                    <i class="bi bi-image display-4 text-muted"></i>
-                </div>
-
-                <div class="card-body d-flex flex-column">
-                    <h6 class="card-subtitle mb-2 text-muted" th:text="${product.brand}">Brand</h6>
-
-                    <h5 class="card-title" th:text="${product.name}">Naziv proizvoda</h5>
-
-                    <small class="text-muted mb-2">
-                        <i class="bi bi-tag me-1"></i>
-                        <span th:text="${product.categoryName}">Kategorija</span>
-                    </small>
-
-                    <p class="card-text text-muted flex-grow-1" th:text="${product.description}">
-                        Opis proizvoda
-                    </p>
-
-                    <div class="mb-3">
-                            <span th:if="${product.stockQuantity > 0}" class="badge bg-success">
-                                <i class="bi bi-check-circle me-1"></i>Na zalihi: <span th:text="${product.stockQuantity}">0</span>
-                            </span>
-                        <span th:if="${product.stockQuantity == 0}" class="badge bg-danger">
-                                <i class="bi bi-x-circle me-1"></i>Nema na zalihi
-                            </span>
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5">Izdvojeni proizvodi</h2>
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6" th:each="product : ${products}">
+                <div class="card product-card h-100 border-0 shadow-sm">
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                         style="height: 200px;">
+                        <i class="bi bi-image display-4 text-muted"></i>
                     </div>
-
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="h5 mb-0 text-primary fw-bold" th:text="${product.price + ' €'}">0.00 €</span>
-                        <div>
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted" th:text="${product.brand}">Brand</h6>
+                        <h5 class="card-title" th:text="${product.name}">Naziv proizvoda</h5>
+                        <p class="card-text text-muted small" th:text="${product.description}">Opis</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="h5 mb-0 text-primary" th:text="${product.price + ' €'}">Cijena</span>
                             <a th:href="@{/products/{id}(id=${product.id})}"
-                               class="btn btn-outline-primary btn-sm me-2">
-                                <i class="bi bi-eye me-1"></i>Detalji
-                            </a>
-                            <button class="btn btn-primary btn-sm" th:disabled="${product.stockQuantity == 0}">
-                                <i class="bi bi-cart-plus me-1"></i>Dodaj
-                            </button>
+                               class="btn btn-primary btn-sm">Detalji</a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <div th:if="${products != null and not #lists.isEmpty(products)}" class="row mt-4">
-        <div class="col">
-            <div class="text-center text-muted">
-                <small>
-                    Prikazano <strong th:text="${products.size()}">0</strong> proizvoda
-                    <span th:if="${selectedCategory}" th:text="'u kategoriji ' + ${selectedCategory.name}"></span>
-                </small>
-            </div>
+        <div class="text-center mt-4" th:if="${products != null and not #lists.isEmpty(products)}">
+            <a th:href="@{/products}" class="btn btn-outline-primary btn-lg">
+                Pogledaj sve proizvode
+            </a>
         </div>
     </div>
-</div>
-
-<!-- Footer -->
-<footer class="bg-dark text-white py-4 mt-5">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6">
-                <h5>ProSport</h5>
-                <p class="mb-0">Vaš pouzdani partner za sportsku opremu</p>
-            </div>
-            <div class="col-md-6 text-md-end">
-                <p class="mb-0">&copy; 2025 ProSport. Sva prava pridržana.</p>
-            </div>
-        </div>
-    </div>
-</footer>
+</section>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>

@@ -142,7 +142,7 @@
                     </a>
                     <a th:each="category : ${categories}"
                        th:href="@{/products(categoryId=${category.id})}"
-                       th:class="${selectedCategory != null and selectedCategory.id == category.id ? 'filter-badge active text-decoration-none' : 'filter-badge text-decoration-none'}"
+                       th:class="${selectedCategory?.id == category.id ? 'filter-badge active text-decoration-none' : 'filter-badge text-decoration-none'}"
                        th:text="${category.name}">
                         Kategorija
                     </a>

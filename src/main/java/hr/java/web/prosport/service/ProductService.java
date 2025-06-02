@@ -10,4 +10,7 @@ public interface ProductService {
     List<ProductDto> findAvailable();
     Optional<ProductDto> findById(Long id);
     List<ProductDto> findByCategoryId(Long categoryId);
+    ProductDto createProduct(ProductDto productDto);
+    ProductDto updateProduct(Long id, ProductDto productDto);
+    void deleteProduct(Long id);
 }

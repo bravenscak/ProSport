@@ -1,7 +1,9 @@
 package hr.java.web.prosport.service;
 
 import hr.java.web.prosport.dto.ProductDto;
+import hr.java.web.prosport.model.Category;
 import hr.java.web.prosport.model.Product;
+import hr.java.web.prosport.repository.CategoryRepository;
 import hr.java.web.prosport.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import java.util.Optional;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
 
     @Override
     public List<ProductDto> findAll() {
@@ -40,6 +43,58 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.findByCategoryId(categoryId).stream()
                 .map(this::mapToDTO)
                 .toList();
+    }
+
+    @Override
+    public ProductDto createProduct(ProductDto productDto) {
+        Category category = categoryRepository.findById(productDto.getCategoryId())
+                .orElseThrow(() -> new RuntimeException("Kategorija nije pronađena"));
+
+        Product product = mapToEntity(productDto);
+        product.setCategory(category);
+        product.setAvailable(true);
+
+        Product savedProduct = productRepository.save(product);
+        return mapToDTO(savedProduct);
+    }
+
+    @Override
+    public ProductDto updateProduct(Long id, ProductDto productDto) {
+        Product existingProduct = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Proizvod nije pronađen"));
+
+        Category category = categoryRepository.findById(productDto.getCategoryId())
+                .orElseThrow(() -> new RuntimeException("Kategorija nije pronađena"));
+
+        existingProduct.setName(productDto.getName());
+        existingProduct.setDescription(productDto.getDescription());
+        existingProduct.setPrice(productDto.getPrice());
+        existingProduct.setStockQuantity(productDto.getStockQuantity());
+        existingProduct.setBrand(productDto.getBrand());
+        existingProduct.setCategory(category);
+        existingProduct.setAvailable(productDto.getAvailable() != null ? productDto.getAvailable() : true);
+
+        Product updatedProduct = productRepository.save(existingProduct);
+        return mapToDTO(updatedProduct);
+    }
+
+    @Override
+    public void deleteProduct(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Proizvod nije pronađen"));
+        productRepository.delete(product);
+    }
+
+    private Product mapToEntity(ProductDto dto) {
+        Product product = new Product();
+        product.setId(dto.getId());
+        product.setName(dto.getName());
+        product.setDescription(dto.getDescription());
+        product.setPrice(dto.getPrice());
+        product.setStockQuantity(dto.getStockQuantity());
+        product.setBrand(dto.getBrand());
+        product.setAvailable(dto.getAvailable() != null ? dto.getAvailable() : true);
+        return product;
     }
 
     private ProductDto mapToDTO(Product product) {

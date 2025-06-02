@@ -9,4 +9,7 @@ public interface CategoryService {
     List<CategoryDto> findAll();
     Optional<CategoryDto> findById(Long id);
     Optional<CategoryDto> findByName(String name);
+    CategoryDto createCategory(CategoryDto categoryDto);
+    CategoryDto updateCategory(Long id, CategoryDto categoryDto);
+    void deleteCategory(Long id);
 }
