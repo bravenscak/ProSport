@@ -62,19 +62,24 @@
                 <hr class="text-white">
 
                 <ul class="nav nav-pills flex-column mb-auto">
-                    <li>
+                    <li class="nav-item">
                         <a th:href="@{/admin/categories}" class="nav-link text-white">
                             <i class="bi bi-grid-3x3-gap me-2"></i>Kategorije
                         </a>
                     </li>
-                    <li>
+                    <li class="nav-item">
                         <a th:href="@{/admin/products}" class="nav-link text-white">
                             <i class="bi bi-box me-2"></i>Proizvodi
                         </a>
                     </li>
-                    <li>
+                    <li class="nav-item">
                         <a th:href="@{/admin/orders}" class="nav-link text-white active">
                             <i class="bi bi-bag me-2"></i>Narudžbe
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/admin/login-history}" class="nav-link text-white">
+                            <i class="bi bi-clock-history me-2"></i>Login History
                         </a>
                     </li>
                 </ul>
@@ -173,59 +178,6 @@
 
                 <div class="row">
                     <div class="col-lg-8">
-                        <div class="status-update-section">
-                            <h5 class="mb-3">
-                                <i class="bi bi-gear me-2 text-primary"></i>Upravljanje statusom narudžbe
-                            </h5>
-                            <div class="row g-2">
-                                <div class="col-md-6">
-                                    <form th:action="@{/admin/orders/{id}/status(id=${order.id})}" method="post" class="d-inline">
-                                        <input type="hidden" name="status" value="CONFIRMED">
-                                        <button type="submit" class="btn btn-success w-100"
-                                                th:disabled="${order.status.name() == 'CONFIRMED' or order.status.name() == 'PROCESSING' or order.status.name() == 'SHIPPED' or order.status.name() == 'DELIVERED'}">
-                                            <i class="bi bi-check-circle me-2"></i>Potvrdi narudžbu
-                                        </button>
-                                    </form>
-                                </div>
-                                <div class="col-md-6">
-                                    <form th:action="@{/admin/orders/{id}/status(id=${order.id})}" method="post" class="d-inline">
-                                        <input type="hidden" name="status" value="PROCESSING">
-                                        <button type="submit" class="btn btn-info w-100"
-                                                th:disabled="${order.status.name() == 'PROCESSING' or order.status.name() == 'SHIPPED' or order.status.name() == 'DELIVERED'}">
-                                            <i class="bi bi-gear me-2"></i>Stavi u pripremu
-                                        </button>
-                                    </form>
-                                </div>
-                                <div class="col-md-6">
-                                    <form th:action="@{/admin/orders/{id}/status(id=${order.id})}" method="post" class="d-inline">
-                                        <input type="hidden" name="status" value="SHIPPED">
-                                        <button type="submit" class="btn btn-primary w-100"
-                                                th:disabled="${order.status.name() == 'SHIPPED' or order.status.name() == 'DELIVERED'}">
-                                            <i class="bi bi-truck me-2"></i>Označi kao poslano
-                                        </button>
-                                    </form>
-                                </div>
-                                <div class="col-md-6">
-                                    <form th:action="@{/admin/orders/{id}/status(id=${order.id})}" method="post" class="d-inline">
-                                        <input type="hidden" name="status" value="DELIVERED">
-                                        <button type="submit" class="btn btn-success w-100"
-                                                th:disabled="${order.status.name() == 'DELIVERED'}">
-                                            <i class="bi bi-check2-all me-2"></i>Označi kao dostavljeno
-                                        </button>
-                                    </form>
-                                </div>
-                                <div class="col-12" th:if="${order.status.name() != 'CANCELLED' and order.status.name() != 'DELIVERED'}">
-                                    <form th:action="@{/admin/orders/{id}/status(id=${order.id})}" method="post" class="d-inline">
-                                        <input type="hidden" name="status" value="CANCELLED">
-                                        <button type="submit" class="btn btn-danger w-100"
-                                                onclick="return confirm('Jeste li sigurni da želite otkazati ovu narudžbu?')">
-                                            <i class="bi bi-x-circle me-2"></i>Otkaži narudžbu
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-
                         <div class="order-info-card mb-4">
                             <div class="card-header bg-light border-0 p-4">
                                 <h5 class="mb-0">

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login History - ProSport Admin</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        .admin-sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .admin-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .content-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e9ecef;
+        }
+        .login-row {
+            transition: background-color 0.2s ease;
+        }
+        .login-row:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 col-lg-2 px-0">
+            <div class="admin-sidebar d-flex flex-column p-3">
+                <a href="#" class="d-flex align-items-center mb-3 text-white text-decoration-none">
+                    <i class="bi bi-trophy-fill me-2"></i>
+                    <span class="fs-4 fw-bold">ProSport Admin</span>
+                </a>
+
+                <hr class="text-white">
+
+                <ul class="nav nav-pills flex-column mb-auto">
+                    <li class="nav-item">
+                        <a th:href="@{/admin/categories}" class="nav-link text-white">
+                            <i class="bi bi-grid-3x3-gap me-2"></i>Kategorije
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/admin/products}" class="nav-link text-white">
+                            <i class="bi bi-box me-2"></i>Proizvodi
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/admin/orders}" class="nav-link text-white">
+                            <i class="bi bi-bag me-2"></i>Narudžbe
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/admin/login-history}" class="nav-link text-white active">
+                            <i class="bi bi-clock-history me-2"></i>Login History
+                        </a>
+                    </li>
+                </ul>
+
+                <hr class="text-white">
+
+                <div class="dropdown">
+                    <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+                       data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle me-2"></i>
+                        <span sec:authentication="name">Admin</span>
+                    </a>
+                    <ul class="dropdown-menu text-small shadow">
+                        <li><a class="dropdown-item" th:href="@{/}">
+                            <i class="bi bi-house me-2"></i>Početna stranica</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form th:action="@{/logout}" method="post" class="d-inline">
+                                <button type="submit" class="dropdown-item">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Odjava
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9 col-lg-10 admin-content">
+            <div class="p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 class="h2 mb-0">Login History</h1>
+                        <p class="text-muted mb-0">Pregled svih prijava korisnika</p>
+                    </div>
+                </div>
+
+                <!-- Filter sekcija -->
+                <div class="content-card mb-4">
+                    <div class="card-header bg-white border-bottom p-4">
+                        <h5 class="mb-0">
+                            <i class="bi bi-funnel me-2 text-primary"></i>Filteri
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="get" th:action="@{/admin/login-history}">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="username" class="form-label">Korisničko ime</label>
+                                    <input type="text" class="form-control" id="username" name="username"
+                                           th:value="${username}" placeholder="Filtriraj po korisničkom imenu">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="startDate" class="form-label">Od datuma</label>
+                                    <input type="date" class="form-control" id="startDate" name="startDate"
+                                           th:value="${startDate}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="endDate" class="form-label">Do datuma</label>
+                                    <input type="date" class="form-control" id="endDate" name="endDate"
+                                           th:value="${endDate}">
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-search me-1"></i>Filtriraj
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="card-header bg-white border-bottom p-4">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history me-2 text-primary"></i>
+                            Login History
+                            <span th:if="${loginHistory != null}" class="badge bg-primary ms-2" th:text="${loginHistory.size()}">0</span>
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div th:if="${loginHistory == null or #lists.isEmpty(loginHistory)}" class="text-center py-5">
+                            <div class="mb-4">
+                                <i class="bi bi-clock-history display-1 text-muted"></i>
+                            </div>
+                            <h4 class="text-muted mb-3">Nema login zapisa</h4>
+                            <p class="text-muted">Trenutno nema login zapisa za prikaz.</p>
+                        </div>
+
+                        <div th:if="${loginHistory != null and not #lists.isEmpty(loginHistory)}">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th class="px-4 py-3">Korisničko ime</th>
+                                        <th class="py-3">IP Adresa</th>
+                                        <th class="py-3">Datum i vrijeme</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="login : ${loginHistory}" class="login-row">
+                                        <td class="px-4 py-3">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-person-circle text-primary me-2"></i>
+                                                <strong th:text="${login.username}">username</strong>
+                                            </div>
+                                        </td>
+                                        <td class="py-3">
+                                            <code th:text="${login.ipAddress}">127.0.0.1</code>
+                                        </td>
+                                        <td class="py-3">
+                                            <div>
+                                                <span th:text="${#temporals.format(login.loginTime, 'dd.MM.yyyy')}">01.01.2024</span>
+                                                <div class="text-muted small" th:text="${#temporals.format(login.loginTime, 'HH:mm:ss')}">12:00:00</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="px-4 py-3 bg-light border-top">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Ukupno login zapisa: <strong th:text="${loginHistory.size()}">0</strong>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

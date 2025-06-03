@@ -28,14 +28,24 @@
                 <hr class="text-white">
 
                 <ul class="nav nav-pills flex-column mb-auto">
-                    <li>
+                    <li class="nav-item">
                         <a th:href="@{/admin/categories}" class="nav-link text-white active">
                             <i class="bi bi-grid-3x3-gap me-2"></i>Kategorije
                         </a>
                     </li>
-                    <li>
+                    <li class="nav-item">
                         <a th:href="@{/admin/products}" class="nav-link text-white">
                             <i class="bi bi-box me-2"></i>Proizvodi
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/admin/orders}" class="nav-link text-white">
+                            <i class="bi bi-bag me-2"></i>Narudžbe
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:href="@{/admin/login-history}" class="nav-link text-white">
+                            <i class="bi bi-clock-history me-2"></i>Login History
                         </a>
                     </li>
                 </ul>

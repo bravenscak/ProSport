@@ -94,12 +94,13 @@ public class CheckoutController {
                     return "redirect:/checkout";
                 }
 
-            } else {
+            } else { // CASH_ON_DELIVERY
+                // Za gotovinu odmah postavi status na CONFIRMED
                 orderService.updateOrderStatus(order.getId(), Order.OrderStatus.CONFIRMED);
                 cartService.clearCart(sessionId, user);
 
                 attributes.addFlashAttribute("success",
-                        "Order placed successfully! Order number: " + order.getOrderNumber());
+                        "Narudžba je uspješno kreirana! Broj narudžbe: " + order.getOrderNumber());
                 return "redirect:/orders/" + order.getId();
             }
 

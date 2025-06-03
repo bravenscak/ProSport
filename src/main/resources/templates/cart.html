@@ -77,7 +77,7 @@
                         <span sec:authentication="name">Korisnik</span>
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" th:href="@{/profile}">
+                        <li><a class="dropdown-item">
                             <i class="bi bi-person-circle me-2"></i>Profil</a></li>
                         <li sec:authorize="hasRole('ADMIN')">
                             <a class="dropdown-item" th:href="@{/admin}">
@@ -242,9 +242,9 @@
                 </div>
 
                 <div class="d-grid gap-2">
-                    <button class="btn btn-success btn-lg" sec:authorize="isAuthenticated()">
+                    <a th:href="@{/checkout}" class="btn btn-success btn-lg" sec:authorize="isAuthenticated()">
                         <i class="bi bi-credit-card me-2"></i>Nastavi na plaćanje
-                    </button>
+                    </a>
 
                     <div sec:authorize="!isAuthenticated()" class="text-center">
                         <p class="small text-muted mb-3">Za nastavak morate se prijaviti</p>
@@ -362,7 +362,7 @@
                             $(this).remove();
 
                             if (response.cart.items.length === 0) {
-                                location.reload(); // Preusmjeri na praznu košaricu
+                                location.reload();
                             } else {
                                 updateCartSummary(response.cart);
                             }

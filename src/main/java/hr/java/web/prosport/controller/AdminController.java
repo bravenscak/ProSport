@@ -1,20 +1,24 @@
 package hr.java.web.prosport.controller;
 
 import hr.java.web.prosport.dto.CategoryDto;
+import hr.java.web.prosport.dto.LoginHistoryDto;
 import hr.java.web.prosport.dto.ProductDto;
-import hr.java.web.prosport.service.CategoryService;
-import hr.java.web.prosport.service.ImageUploadService;
-import hr.java.web.prosport.service.OrderService;
-import hr.java.web.prosport.service.ProductService;
+import hr.java.web.prosport.service.*;
 import hr.java.web.prosport.model.Order;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Controller
 @RequestMapping("/admin")
@@ -24,19 +28,12 @@ public class AdminController {
     private final CategoryService categoryService;
     private final ProductService productService;
     private final ImageUploadService imageUploadService;
+    private final LoginHistoryService loginHistoryService;
     private final OrderService orderService;
 
     @GetMapping
-    public String adminRoot(Model model) {
-        model.addAttribute("totalCategories", categoryService.findAll().size());
-        model.addAttribute("totalProducts", productService.findAll().size());
-        model.addAttribute("activeProducts", productService.findAvailable().size());
-
-        model.addAttribute("totalOrders", orderService.findAll().size());
-        model.addAttribute("pendingOrders", orderService.countByStatus(Order.OrderStatus.PENDING));
-        model.addAttribute("confirmedOrders", orderService.countByStatus(Order.OrderStatus.CONFIRMED));
-
-        return "admin/";
+    public String adminRoot() {
+        return "redirect:/admin/products";
     }
 
     @GetMapping("/categories")
@@ -45,14 +42,14 @@ public class AdminController {
         return "admin/categories";
     }
 
-    @GetMapping("/categories/new")
-    public String newCategory(Model model) {
-        model.addAttribute("category", new CategoryDto());
-        return "admin/category-form";
-    }
-
     @PostMapping("/categories")
-    public String saveCategory(@ModelAttribute CategoryDto categoryDto, RedirectAttributes attributes) {
+    public String saveCategory(@Valid @ModelAttribute CategoryDto categoryDto,
+                               BindingResult result,
+                               RedirectAttributes attributes) {
+        if (result.hasErrors()) {
+            return "admin/category-form";
+        }
+
         try {
             categoryService.createCategory(categoryDto);
             attributes.addFlashAttribute("success", "Kategorija je uspješno kreirana!");
@@ -60,6 +57,12 @@ public class AdminController {
             attributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/admin/categories";
+    }
+
+    @GetMapping("/categories/new")
+    public String newCategory(Model model) {
+        model.addAttribute("category", new CategoryDto());
+        return "admin/category-form";
     }
 
     @GetMapping("/categories/{id}/edit")
@@ -71,8 +74,13 @@ public class AdminController {
     }
 
     @PostMapping("/categories/{id}")
-    public String updateCategory(@PathVariable Long id, @ModelAttribute CategoryDto categoryDto,
+    public String updateCategory(@PathVariable Long id,
+                                 @Valid @ModelAttribute CategoryDto categoryDto,
+                                 BindingResult result,
                                  RedirectAttributes attributes) {
+        if (result.hasErrors()) {
+            return "admin/category-form";
+        }
         try {
             categoryService.updateCategory(id, categoryDto);
             attributes.addFlashAttribute("success", "Kategorija je uspješno ažurirana!");
@@ -201,5 +209,24 @@ public class AdminController {
             attributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/admin/products";
+    }
+
+    @GetMapping("/login-history")
+    public String loginHistory(@RequestParam(required = false) String username,
+                               @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+                               @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
+                               Model model) {
+
+        LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = endDate != null ? endDate.atTime(23, 59, 59) : null;
+
+        List<LoginHistoryDto> loginHistory = loginHistoryService.findByFilters(username, startDateTime, endDateTime);
+
+        model.addAttribute("loginHistory", loginHistory);
+        model.addAttribute("username", username);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+
+        return "admin/login-history";
     }
 }

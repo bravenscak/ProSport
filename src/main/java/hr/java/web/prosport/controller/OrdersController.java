@@ -93,23 +93,4 @@ public class OrdersController {
         model.addAttribute("order", order);
         return "admin/order-details";
     }
-
-    @PostMapping("/admin/orders/{id}/status")
-    public String updateOrderStatus(@PathVariable Long id,
-                                    @RequestParam("status") String status,
-                                    @AuthenticationPrincipal User user,
-                                    RedirectAttributes attributes) {
-        if (user == null || !user.getRole().name().equals("ADMIN")) {
-            throw new RuntimeException("Access denied");
-        }
-
-        try {
-            orderService.updateOrderStatus(id, Order.OrderStatus.valueOf(status));
-            attributes.addFlashAttribute("success", "Status narudžbe je uspješno ažuriran!");
-        } catch (Exception e) {
-            attributes.addFlashAttribute("error", "Greška pri ažuriranju statusa: " + e.getMessage());
-        }
-
-        return "redirect:/admin/orders/" + id;
-    }
 }
