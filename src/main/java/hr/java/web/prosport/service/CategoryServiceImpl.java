@@ -1,6 +1,7 @@
 package hr.java.web.prosport.service;
 
 import hr.java.web.prosport.dto.CategoryDto;
+import hr.java.web.prosport.exception.CategoryException;
 import hr.java.web.prosport.model.Category;
 import hr.java.web.prosport.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDto createCategory(CategoryDto categoryDto) {
         if (categoryRepository.findByName(categoryDto.getName()).isPresent()) {
-            throw new RuntimeException("Kategorija s nazivom '" + categoryDto.getName() + "' već postoji");
+            throw new CategoryException("Kategorija s nazivom '" + categoryDto.getName() + "' već postoji");
         }
 
         Category category = mapToEntity(categoryDto);
@@ -48,11 +49,11 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDto updateCategory(Long id, CategoryDto categoryDto) {
         Category existingCategory = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Kategorija nije pronađena"));
+                .orElseThrow(() -> new CategoryException("Kategorija nije pronađena"));
 
         Optional<Category> categoryWithSameName = categoryRepository.findByName(categoryDto.getName());
         if (categoryWithSameName.isPresent() && !categoryWithSameName.get().getId().equals(id)) {
-            throw new RuntimeException("Kategorija s nazivom '" + categoryDto.getName() + "' već postoji");
+            throw new CategoryException("Kategorija s nazivom '" + categoryDto.getName() + "' već postoji");
         }
 
         existingCategory.setName(categoryDto.getName());
@@ -65,10 +66,10 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public void deleteCategory(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Kategorija nije pronađena"));
+                .orElseThrow(() -> new CategoryException("Kategorija nije pronađena"));
 
         if (category.getProducts() != null && !category.getProducts().isEmpty()) {
-            throw new RuntimeException("Ne možete obrisati kategoriju koja sadrži proizvode");
+            throw new CategoryException("Ne možete obrisati kategoriju koja sadrži proizvode");
         }
 
         categoryRepository.delete(category);

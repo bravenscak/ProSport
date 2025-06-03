@@ -220,7 +220,6 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private CartDto getCartForUser(User user) {
-        log.warn("Using dummy cart implementation - this should be replaced with actual cart retrieval");
         return new CartDto(List.of());
     }
 

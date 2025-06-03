@@ -1,6 +1,7 @@
 package hr.java.web.prosport.controller;
 
 import hr.java.web.prosport.dto.OrderDto;
+import hr.java.web.prosport.exception.OrderException;
 import hr.java.web.prosport.model.Order;
 import hr.java.web.prosport.model.User;
 import hr.java.web.prosport.service.OrderService;
@@ -58,10 +59,10 @@ public class OrdersController {
         }
 
         OrderDto order = orderService.findById(id)
-                .orElseThrow(() -> new RuntimeException(ORDER_NOT_FOUND_MSG));
+                .orElseThrow(() -> new OrderException(ORDER_NOT_FOUND_MSG));
 
         if (!user.getRole().name().equals(ADMIN_ROLE) && !order.getUserEmail().equals(user.getEmail())) {
-            throw new RuntimeException(ACCESS_DENIED_MSG);
+            throw new OrderException(ACCESS_DENIED_MSG);
         }
 
         model.addAttribute(ORDER_ATTR, order);
@@ -104,7 +105,7 @@ public class OrdersController {
     @GetMapping("/admin/orders/{id}")
     public String adminOrderDetails(@PathVariable Long id, Model model) {
         OrderDto order = orderService.findById(id)
-                .orElseThrow(() -> new RuntimeException(ORDER_NOT_FOUND_MSG));
+                .orElseThrow(() -> new OrderException(ORDER_NOT_FOUND_MSG));
 
         model.addAttribute(ORDER_ATTR, order);
         return "admin/order-details";

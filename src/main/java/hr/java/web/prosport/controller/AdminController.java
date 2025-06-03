@@ -26,6 +26,7 @@ public class AdminController {
 
     private static final String REDIRECT_ADMIN_CATEGORIES = "redirect:/admin/categories";
     private static final String REDIRECT_ADMIN_PRODUCTS = "redirect:/admin/products";
+    private static final String REDIRECT_ADMIN_PRODUCTS_ID = "redirect:/admin/products/";
     private static final String REDIRECT_ADMIN_PRODUCTS_NEW = "redirect:/admin/products/new";
     private static final String ADMIN_CATEGORY_FORM = "admin/category-form";
     private static final String ADMIN_PRODUCT_FORM = "admin/product-form";
@@ -47,7 +48,6 @@ public class AdminController {
     private final ProductService productService;
     private final ImageUploadService imageUploadService;
     private final LoginHistoryService loginHistoryService;
-    private final OrderService orderService;
 
     @GetMapping
     public String adminRoot() {
@@ -186,7 +186,7 @@ public class AdminController {
             if (imageFile != null && !imageFile.isEmpty()) {
                 if (!imageUploadService.isValidImage(imageFile)) {
                     attributes.addFlashAttribute(ERROR_ATTR, INVALID_IMAGE_MSG);
-                    return "redirect:/admin/products/" + id + EDIT_PATH;
+                    return REDIRECT_ADMIN_PRODUCTS_ID + id + EDIT_PATH;
                 }
 
                 if (existingProduct.getImageUrl() != null) {
@@ -203,10 +203,10 @@ public class AdminController {
             attributes.addFlashAttribute(SUCCESS_ATTR, PRODUCT_UPDATED_MSG);
         } catch (IOException e) {
             attributes.addFlashAttribute(ERROR_ATTR, IMAGE_UPLOAD_ERROR_MSG + e.getMessage());
-            return "redirect:/admin/products/" + id + EDIT_PATH;
+            return REDIRECT_ADMIN_PRODUCTS_ID + id + EDIT_PATH;
         } catch (RuntimeException e) {
             attributes.addFlashAttribute(ERROR_ATTR, e.getMessage());
-            return "redirect:/admin/products/" + id + EDIT_PATH;
+            return REDIRECT_ADMIN_PRODUCTS_ID + id + EDIT_PATH;
         }
         return REDIRECT_ADMIN_PRODUCTS;
     }
