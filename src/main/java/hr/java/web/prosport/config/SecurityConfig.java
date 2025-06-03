@@ -23,11 +23,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
                         .requestMatchers("/", "/home", "/products/**", "/categories/**", "/search",
                                 "/register", "/login", "/logout",
                                 "/css/**", "/js/**", "/images/**", "/static/**", "/uploads/**",
-                                "/favicon.ico", "/h2-console/**", "/cart/**").permitAll()
+                                "/favicon.ico", "/h2-console/**", "/cart/**",
+                                "/checkout/paypal/success", "/checkout/paypal/cancel").permitAll()
 
                         .requestMatchers("/checkout/**").authenticated()
 
@@ -53,7 +53,8 @@ public class SecurityConfig {
                         .ignoringRequestMatchers("/h2-console/**",
                                 "/admin/categories/quick",
                                 "/checkout/validate",
-                                "/cart/**")
+                                "/cart/**",
+                                "/checkout/paypal/**")
                 )
                 .headers(headers -> headers
                         .frameOptions(frameOptions -> frameOptions.sameOrigin())
