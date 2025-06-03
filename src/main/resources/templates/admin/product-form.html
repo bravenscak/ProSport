@@ -81,6 +81,9 @@
                             <i class="bi bi-clock-history me-2"></i>Login History
                         </a>
                     </li>
+                    <small class="text-white-50 d-block mt-2">
+                        Aktivnih korisnika: <span th:text="${T(hr.java.web.prosport.config.SessionCounterListener).getActiveSessionCount()}">0</span>
+                    </small>
                 </ul>
 
                 <hr class="text-white">

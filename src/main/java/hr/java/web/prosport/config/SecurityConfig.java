@@ -17,6 +17,7 @@ public class SecurityConfig {
     private final UserService userService;
     private final LoginSuccessHandler loginSuccessHandler;
     private final CartPreservationFilter cartPreservationFilter;
+    private final PerformanceFilter performanceFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -57,8 +58,8 @@ public class SecurityConfig {
                 .headers(headers -> headers
                         .frameOptions(frameOptions -> frameOptions.sameOrigin())
                 )
-                .addFilterBefore(cartPreservationFilter, UsernamePasswordAuthenticationFilter.class);
-
+                .addFilterBefore(cartPreservationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(performanceFilter, CartPreservationFilter.class);
         return http.build();
     }
 }

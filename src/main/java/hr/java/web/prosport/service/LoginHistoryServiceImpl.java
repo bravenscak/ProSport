@@ -25,7 +25,6 @@ public class LoginHistoryServiceImpl implements LoginHistoryService {
         try {
             LoginHistory loginHistory = new LoginHistory(username, ipAddress);
             loginHistoryRepository.save(loginHistory);
-            log.info("Login recorded for user: {} from IP: {}", username, ipAddress);
         } catch (Exception e) {
             log.error("Failed to record login for user: {}", username, e);
         }

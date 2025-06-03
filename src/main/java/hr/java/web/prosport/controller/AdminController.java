@@ -4,7 +4,6 @@ import hr.java.web.prosport.dto.CategoryDto;
 import hr.java.web.prosport.dto.LoginHistoryDto;
 import hr.java.web.prosport.dto.ProductDto;
 import hr.java.web.prosport.service.*;
-import hr.java.web.prosport.model.Order;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;

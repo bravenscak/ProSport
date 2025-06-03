@@ -247,14 +247,6 @@
                         <span>Međuzbroj:</span>
                         <span th:text="${cart.totalAmount + ' €'}">0.00 €</span>
                     </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Dostava:</span>
-                        <span class="text-success">Besplatno</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>PDV (uključen):</span>
-                        <span>0.00 €</span>
-                    </div>
                 </div>
 
                 <hr>
@@ -262,14 +254,6 @@
                 <div class="d-flex justify-content-between mb-4">
                     <span class="h5 fw-bold">UKUPNO:</span>
                     <span class="h5 fw-bold text-success" th:text="${cart.totalAmount + ' €'}">0.00 €</span>
-                </div>
-
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    <small>
-                        Vaša narudžba će biti obrađena u roku od 24 sata.
-                        Dostava se vrši u roku od 2-5 radnih dana.
-                    </small>
                 </div>
             </div>
         </div>
