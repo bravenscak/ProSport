@@ -59,14 +59,10 @@ public class OrderServiceImpl implements OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        List<OrderItem> orderItems = cart.getItems().stream()
-                .map(cartItem -> {
-                    OrderItem orderItem = createOrderItem(savedOrder, cartItem);
-                    return orderItemRepository.save(orderItem);
-                })
-                .toList();
-
-        savedOrder.setOrderItems(orderItems);
+        cart.getItems().forEach(cartItem -> {
+            OrderItem orderItem = createOrderItem(savedOrder, cartItem);
+            orderItemRepository.save(orderItem);
+        });
 
         updateProductStock(cart);
 
@@ -94,14 +90,10 @@ public class OrderServiceImpl implements OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        List<OrderItem> orderItems = cart.getItems().stream()
-                .map(cartItem -> {
-                    OrderItem orderItem = createOrderItem(savedOrder, cartItem);
-                    return orderItemRepository.save(orderItem);
-                })
-                .toList();
-
-        savedOrder.setOrderItems(orderItems);
+        cart.getItems().forEach(cartItem -> {
+            OrderItem orderItem = createOrderItem(savedOrder, cartItem);
+            orderItemRepository.save(orderItem);
+        });
 
         updateProductStock(cart);
 
@@ -131,10 +123,11 @@ public class OrderServiceImpl implements OrderService {
         order.setPaypalOrderId(paypalOrderId);
         order.setUpdatedAt(LocalDateTime.now());
 
-        Order updatedOrder = orderRepository.save(order);
+        orderRepository.saveAndFlush(order);
+
         log.info("PayPal order ID {} set for order {}", paypalOrderId, order.getOrderNumber());
 
-        return mapToDTO(updatedOrder);
+        return mapToDTO(order);
     }
 
     @Override
@@ -146,10 +139,11 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(Order.OrderStatus.CONFIRMED);
         order.setUpdatedAt(LocalDateTime.now());
 
-        Order updatedOrder = orderRepository.save(order);
+        orderRepository.saveAndFlush(order);
+
         log.info("PayPal payment confirmed for order {}", order.getOrderNumber());
 
-        return mapToDTO(updatedOrder);
+        return mapToDTO(order);
     }
 
     @Override
@@ -266,8 +260,9 @@ public class OrderServiceImpl implements OrderService {
             dto.setUserEmail(order.getUser().getEmail());
         }
 
-        if (order.getOrderItems() != null) {
-            List<OrderItemDto> itemDtos = order.getOrderItems().stream()
+        if (order.getId() != null) {
+            List<OrderItem> orderItems = orderItemRepository.findByOrderId(order.getId());
+            List<OrderItemDto> itemDtos = orderItems.stream()
                     .map(this::mapOrderItemToDTO)
                     .toList();
             dto.setOrderItems(itemDtos);

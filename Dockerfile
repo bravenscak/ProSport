@@ -1,5 +1,5 @@
 FROM eclipse-temurin:21-jdk-alpine
-MAINTAINER hr.java
+LABEL hr.java="Bruno"
 COPY target/ProSport-0.0.1-SNAPSHOT.jar demo.jar
 COPY data /data
 COPY uploads /uploads

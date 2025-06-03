@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -57,8 +58,8 @@ public class Order {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<OrderItem> orderItems;
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<OrderItem> orderItems = new ArrayList<>();
 
     private String notes;
 
@@ -90,7 +91,23 @@ public class Order {
         this.totalAmount = totalAmount;
         this.shippingAddress = shippingAddress;
         this.phoneNumber = phoneNumber;
-        this.billingAddress = shippingAddress; // Assume same as shipping
+        this.billingAddress = shippingAddress;
         this.createdAt = LocalDateTime.now();
+        this.orderItems = new ArrayList<>();
+    }
+
+    public void addOrderItem(OrderItem orderItem) {
+        if (orderItems == null) {
+            orderItems = new ArrayList<>();
+        }
+        orderItems.add(orderItem);
+        orderItem.setOrder(this);
+    }
+
+    public void removeOrderItem(OrderItem orderItem) {
+        if (orderItems != null) {
+            orderItems.remove(orderItem);
+            orderItem.setOrder(null);
+        }
     }
 }
