@@ -4,7 +4,9 @@ import hr.java.web.prosport.dto.CategoryDto;
 import hr.java.web.prosport.dto.ProductDto;
 import hr.java.web.prosport.service.CategoryService;
 import hr.java.web.prosport.service.ImageUploadService;
+import hr.java.web.prosport.service.OrderService;
 import hr.java.web.prosport.service.ProductService;
+import hr.java.web.prosport.model.Order;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,10 +24,19 @@ public class AdminController {
     private final CategoryService categoryService;
     private final ProductService productService;
     private final ImageUploadService imageUploadService;
+    private final OrderService orderService;
 
     @GetMapping
-    public String adminRoot() {
-        return "redirect:/admin/products";
+    public String adminRoot(Model model) {
+        model.addAttribute("totalCategories", categoryService.findAll().size());
+        model.addAttribute("totalProducts", productService.findAll().size());
+        model.addAttribute("activeProducts", productService.findAvailable().size());
+
+        model.addAttribute("totalOrders", orderService.findAll().size());
+        model.addAttribute("pendingOrders", orderService.countByStatus(Order.OrderStatus.PENDING));
+        model.addAttribute("confirmedOrders", orderService.countByStatus(Order.OrderStatus.CONFIRMED));
+
+        return "admin/";
     }
 
     @GetMapping("/categories")
@@ -180,7 +191,6 @@ public class AdminController {
             ProductDto product = productService.findById(id)
                     .orElseThrow(() -> new RuntimeException("Product not found"));
 
-            // Obriši sliku ako postoji
             if (product.getImageUrl() != null) {
                 imageUploadService.deleteImage(product.getImageUrl());
             }

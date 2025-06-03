@@ -22,11 +22,18 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
+                        // Public endpoints
                         .requestMatchers("/", "/home", "/products/**", "/categories/**", "/search",
                                 "/register", "/login", "/logout",
                                 "/css/**", "/js/**", "/images/**", "/static/**", "/uploads/**",
                                 "/favicon.ico", "/h2-console/**", "/cart/**").permitAll()
+
+                        .requestMatchers("/checkout/**").authenticated()
+
+                        .requestMatchers("/orders/**").authenticated()
+
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -41,7 +48,12 @@ public class SecurityConfig {
                         .deleteCookies("JSESSIONID")
                 )
                 .userDetailsService(userService)
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/admin/categories/quick"))
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/h2-console/**",
+                                "/admin/categories/quick",
+                                "/checkout/validate",
+                                "/cart/**")
+                )
                 .headers(headers -> headers
                         .frameOptions(frameOptions -> frameOptions.sameOrigin())
                 )

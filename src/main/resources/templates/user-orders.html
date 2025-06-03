@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moje narudžbe - ProSport</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    .order-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border: 1px solid #e9ecef;
+      border-radius: 12px;
+    }
+    .order-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    .status-badge {
+      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+    }
+    .order-header {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 12px 12px 0 0;
+      padding: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container">
+    <a class="navbar-brand fw-bold fs-3" th:href="@{/}">
+      <i class="bi bi-trophy-fill me-2"></i>ProSport
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" th:href="@{/products}">
+            <i class="bi bi-grid me-1"></i>Proizvodi
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" th:href="@{/cart}">
+            <i class="bi bi-cart me-1"></i>Košarica
+          </a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown">
+            <i class="bi bi-person me-1"></i>
+            <span sec:authentication="name">Korisnik</span>
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" th:href="@{/profile}">
+              <i class="bi bi-person-circle me-2"></i>Profil</a></li>
+            <li><a class="dropdown-item active" th:href="@{/orders}">
+              <i class="bi bi-bag me-2"></i>Moje narudžbe</a></li>
+            <li sec:authorize="hasRole('ADMIN')">
+              <hr class="dropdown-divider">
+            </li>
+            <li sec:authorize="hasRole('ADMIN')">
+              <a class="dropdown-item" th:href="@{/admin}">
+                <i class="bi bi-gear me-2"></i>Admin panel</a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form th:action="@{/logout}" method="post" class="d-inline">
+                <button type="submit" class="dropdown-item">
+                  <i class="bi bi-box-arrow-right me-2"></i>Odjava
+                </button>
+              </form>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container my-5">
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none">Početna</a></li>
+      <li class="breadcrumb-item active">Moje narudžbe</li>
+    </ol>
+  </nav>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h1 class="display-5 fw-bold mb-0">
+            <i class="bi bi-bag me-2"></i>Moje narudžbe
+          </h1>
+          <p class="text-muted">Ovdje možete pronaći sve vaše narudžbe i pratiti njihov status</p>
+        </div>
+        <a th:href="@{/products}" class="btn btn-primary">
+          <i class="bi bi-plus-circle me-2"></i>Nova kupnja
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div th:if="${orders == null or #lists.isEmpty(orders)}" class="row">
+    <div class="col-12">
+      <div class="text-center py-5">
+        <i class="bi bi-bag-x display-1 text-muted"></i>
+        <h3 class="mt-3 text-muted">Nemate narudžbi</h3>
+        <p class="text-muted">Kada napravite prvu narudžbu, ovdje će se prikazati.</p>
+        <div class="mt-4">
+          <a th:href="@{/products}" class="btn btn-primary btn-lg">
+            <i class="bi bi-arrow-right me-2"></i>Počni kupovinu
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div th:if="${orders != null and not #lists.isEmpty(orders)}" class="row">
+    <div class="col-12">
+      <div class="mb-3 text-muted">
+        Ukupno narudžbi: <strong th:text="${orders.size()}">0</strong>
+      </div>
+
+      <div th:each="order : ${orders}" class="order-card mb-4">
+        <div class="order-header">
+          <div class="row align-items-center">
+            <div class="col-md-4">
+              <h5 class="mb-1 fw-bold">
+                Narudžba #<span th:text="${order.orderNumber}">PS-123</span>
+              </h5>
+              <small class="text-muted">
+                <i class="bi bi-calendar me-1"></i>
+                <span th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2024 12:00</span>
+              </small>
+            </div>
+
+            <div class="col-md-3 text-center">
+                            <span th:switch="${order.status.name()}" class="status-badge">
+                                <span th:case="'PENDING'" class="badge bg-warning">
+                                    <i class="bi bi-clock me-1"></i>U obradi
+                                </span>
+                                <span th:case="'CONFIRMED'" class="badge bg-success">
+                                    <i class="bi bi-check-circle me-1"></i>Potvrđeno
+                                </span>
+                                <span th:case="'PROCESSING'" class="badge bg-info">
+                                    <i class="bi bi-gear me-1"></i>Priprema
+                                </span>
+                                <span th:case="'SHIPPED'" class="badge bg-primary">
+                                    <i class="bi bi-truck me-1"></i>Poslano
+                                </span>
+                                <span th:case="'DELIVERED'" class="badge bg-success">
+                                    <i class="bi bi-check2-all me-1"></i>Dostavljeno
+                                </span>
+                                <span th:case="'CANCELLED'" class="badge bg-danger">
+                                    <i class="bi bi-x-circle me-1"></i>Otkazano
+                                </span>
+                                <span th:case="'REFUNDED'" class="badge bg-secondary">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i>Vraćeno
+                                </span>
+                            </span>
+            </div>
+
+            <div class="col-md-3 text-center">
+                            <span th:switch="${order.paymentMethod.name()}" class="small">
+                                <span th:case="'PAYPAL'" class="text-primary">
+                                    <i class="bi bi-paypal me-1"></i>PayPal
+                                </span>
+                                <span th:case="'CASH_ON_DELIVERY'" class="text-success">
+                                    <i class="bi bi-cash-stack me-1"></i>Pouzeće
+                                </span>
+                            </span>
+            </div>
+
+            <div class="col-md-2 text-end">
+              <div class="h5 mb-0 fw-bold text-primary" th:text="${order.totalAmount + ' €'}">0.00 €</div>
+              <small class="text-muted" th:text="${order.totalItems + ' artikala'}">0 artikala</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body p-4">
+          <div class="row">
+            <div class="col-md-8">
+              <h6 class="mb-3">Proizvodi u narudžbi:</h6>
+              <div class="row">
+                <div th:each="item, iterStat : ${order.orderItems}"
+                     th:if="${iterStat.index < 3}"
+                     class="col-md-4 mb-2">
+                  <div class="d-flex align-items-center">
+                    <img th:if="${item.productImageUrl != null}"
+                         th:src="${item.productImageUrl}"
+                         th:alt="${item.productName}"
+                         class="rounded me-2"
+                         style="width: 40px; height: 40px; object-fit: cover;">
+                    <div th:unless="${item.productImageUrl != null}"
+                         class="bg-light rounded me-2 d-flex align-items-center justify-content-center"
+                         style="width: 40px; height: 40px;">
+                      <i class="bi bi-image text-muted"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                      <div class="small fw-bold" th:text="${item.productName}">Proizvod</div>
+                      <div class="text-muted" style="font-size: 0.75rem;">
+                        <span th:text="${item.quantity}">1</span>x
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div th:if="${order.orderItems.size() > 3}" class="col-md-4">
+                  <div class="text-muted small">
+                    +<span th:text="${order.orderItems.size() - 3}">2</span> više proizvoda
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4 text-end">
+              <div class="mb-2">
+                <strong>Adresa dostave:</strong><br>
+                <span class="text-muted small" th:text="${order.shippingAddress}">Adresa</span>
+              </div>
+              <a th:href="@{/orders/{id}(id=${order.id})}" class="btn btn-outline-primary">
+                <i class="bi bi-eye me-1"></i>Pogledaj detalje
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

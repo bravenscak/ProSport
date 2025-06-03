@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="hr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="'Narudžba #' + ${order.orderNumber} + ' - ProSport'">Narudžba - ProSport</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    .order-info-card {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 1px solid #e9ecef;
+    }
+    .order-header {
+      background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+      color: white;
+      border-radius: 15px 15px 0 0;
+      padding: 2rem;
+    }
+    .status-timeline {
+      position: relative;
+      padding-left: 2rem;
+    }
+    .status-timeline::before {
+      content: '';
+      position: absolute;
+      left: 0.75rem;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #e9ecef;
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 2rem;
+    }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -0.75rem;
+      top: 0.25rem;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 50%;
+      background: #6c757d;
+      border: 3px solid white;
+      box-shadow: 0 0 0 2px #e9ecef;
+    }
+    .timeline-item.active::before {
+      background: #198754;
+      box-shadow: 0 0 0 2px #198754;
+    }
+    .timeline-item.current::before {
+      background: #0d6efd;
+      box-shadow: 0 0 0 2px #0d6efd;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    .product-item {
+      border: 1px solid #e9ecef;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      transition: box-shadow 0.2s ease;
+    }
+    .product-item:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .product-image {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container">
+    <a class="navbar-brand fw-bold fs-3" th:href="@{/}">
+      <i class="bi bi-trophy-fill me-2"></i>ProSport
+    </a>
+
+    <div class="navbar-nav ms-auto">
+      <li class="nav-item dropdown d-flex">
+        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+          <i class="bi bi-person me-1"></i>
+          <span sec:authentication="name">Korisnik</span>
+        </a>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" th:href="@{/orders}">
+            <i class="bi bi-bag me-2"></i>Moje narudžbe</a></li>
+          <li sec:authorize="hasRole('ADMIN')">
+            <a class="dropdown-item" th:href="@{/admin}">
+              <i class="bi bi-gear me-2"></i>Admin panel</a>
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <form th:action="@{/logout}" method="post" class="d-inline">
+              <button type="submit" class="dropdown-item">
+                <i class="bi bi-box-arrow-right me-2"></i>Odjava
+              </button>
+            </form>
+          </li>
+        </ul>
+      </li>
+    </div>
+  </div>
+</nav>
+
+<div class="container my-5">
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none">Početna</a></li>
+      <li class="breadcrumb-item"><a th:href="@{/orders}" class="text-decoration-none">Moje narudžbe</a></li>
+      <li class="breadcrumb-item active" th:text="'Narudžba #' + ${order.orderNumber}">Narudžba</li>
+    </ol>
+  </nav>
+
+  <div class="order-info-card mb-4">
+    <div class="order-header">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h1 class="display-6 mb-2">
+            <i class="bi bi-receipt me-2"></i>
+            Narudžba #<span th:text="${order.orderNumber}">PS-123</span>
+          </h1>
+          <p class="mb-0 opacity-75">
+            Naručeno <span th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy u HH:mm')}">01.01.2024 u 12:00</span>
+          </p>
+        </div>
+        <div class="col-md-4 text-end">
+          <div class="h2 mb-1" th:text="${order.totalAmount + ' €'}">0.00 €</div>
+          <span th:switch="${order.status.name()}" class="badge fs-6 px-3 py-2">
+                        <span th:case="'PENDING'" class="badge bg-warning text-dark">
+                            <i class="bi bi-clock me-1"></i>U obradi
+                        </span>
+                        <span th:case="'CONFIRMED'" class="badge bg-success">
+                            <i class="bi bi-check-circle me-1"></i>Potvrđeno
+                        </span>
+                        <span th:case="'PROCESSING'" class="badge bg-info">
+                            <i class="bi bi-gear me-1"></i>Priprema se
+                        </span>
+                        <span th:case="'SHIPPED'" class="badge bg-primary">
+                            <i class="bi bi-truck me-1"></i>Poslano
+                        </span>
+                        <span th:case="'DELIVERED'" class="badge bg-success">
+                            <i class="bi bi-check2-all me-1"></i>Dostavljeno
+                        </span>
+                        <span th:case="'CANCELLED'" class="badge bg-danger">
+                            <i class="bi bi-x-circle me-1"></i>Otkazano
+                        </span>
+                        <span th:case="'REFUNDED'" class="badge bg-secondary">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Vraćeno
+                        </span>
+                    </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="order-info-card mb-4">
+        <div class="card-header bg-light border-0 p-4">
+          <h5 class="mb-0">
+            <i class="bi bi-box me-2 text-primary"></i>
+            Naručeni proizvodi (<span th:text="${order.totalItems}">0</span>)
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <div th:each="item : ${order.orderItems}" class="product-item">
+            <div class="row align-items-center">
+              <div class="col-md-2 text-center">
+                <img th:if="${item.productImageUrl != null}"
+                     th:src="${item.productImageUrl}"
+                     th:alt="${item.productName}"
+                     class="product-image">
+                <div th:unless="${item.productImageUrl != null}"
+                     class="product-image bg-light d-flex align-items-center justify-content-center">
+                  <i class="bi bi-image text-muted"></i>
+                </div>
+              </div>
+
+              <div class="col-md-5">
+                <h6 class="mb-1" th:text="${item.productName}">Naziv proizvoda</h6>
+                <div class="text-muted small mb-1" th:text="${item.productBrand}">Brand</div>
+                <div class="text-muted small">
+                  <i class="bi bi-tag me-1"></i>
+                  <span th:text="${item.productCategory}">Kategorija</span>
+                </div>
+              </div>
+
+              <div class="col-md-2 text-center">
+                <div class="fw-bold" th:text="${item.unitPrice + ' €'}">0.00 €</div>
+                <div class="text-muted small">po komadu</div>
+              </div>
+
+              <div class="col-md-1 text-center">
+                <div class="fw-bold" th:text="${item.quantity}">1</div>
+                <div class="text-muted small">kom</div>
+              </div>
+
+              <div class="col-md-2 text-end">
+                <div class="h6 text-primary mb-0" th:text="${item.totalPrice + ' €'}">0.00 €</div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-4">
+          <div class="row">
+            <div class="col-md-8"></div>
+            <div class="col-md-4">
+              <div class="d-flex justify-content-between mb-2">
+                <span>Međuzbroj:</span>
+                <span th:text="${order.totalAmount + ' €'}">0.00 €</span>
+              </div>
+              <div class="d-flex justify-content-between mb-2">
+                <span>Dostava:</span>
+                <span class="text-success">Besplatno</span>
+              </div>
+              <hr>
+              <div class="d-flex justify-content-between">
+                <span class="fw-bold">UKUPNO:</span>
+                <span class="fw-bold h5 text-primary" th:text="${order.totalAmount + ' €'}">0.00 €</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="order-info-card mb-4">
+        <div class="card-header bg-light border-0 p-4">
+          <h6 class="mb-0">
+            <i class="bi bi-truck me-2 text-primary"></i>
+            Informacije o dostavi
+          </h6>
+        </div>
+        <div class="card-body p-4">
+          <div class="mb-3">
+            <strong>Ime i prezime:</strong><br>
+            <span th:text="${order.userFullName}">Ime Prezime</span>
+          </div>
+          <div class="mb-3">
+            <strong>Adresa dostave:</strong><br>
+            <span th:text="${order.shippingAddress}">Adresa</span>
+          </div>
+          <div class="mb-3">
+            <strong>Telefon:</strong><br>
+            <span th:text="${order.phoneNumber}">Telefon</span>
+          </div>
+          <div class="mb-3">
+            <strong>Email:</strong><br>
+            <span th:text="${order.userEmail}">email@example.com</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="order-info-card mb-4">
+        <div class="card-header bg-light border-0 p-4">
+          <h6 class="mb-0">
+            <i class="bi bi-credit-card me-2 text-primary"></i>
+            Način plaćanja
+          </h6>
+        </div>
+        <div class="card-body p-4">
+          <div th:switch="${order.paymentMethod.name()}">
+            <div th:case="'PAYPAL'" class="d-flex align-items-center">
+              <i class="bi bi-paypal text-primary me-3" style="font-size: 2rem;"></i>
+              <div>
+                <div class="fw-bold">PayPal</div>
+                <div class="text-muted small">Online plaćanje</div>
+                <div th:if="${order.paypalPaymentId}" class="text-muted small mt-1">
+                  ID: <span th:text="${order.paypalPaymentId}">payment-id</span>
+                </div>
+              </div>
+            </div>
+            <div th:case="'CASH_ON_DELIVERY'" class="d-flex align-items-center">
+              <i class="bi bi-cash-stack text-success me-3" style="font-size: 2rem;"></i>
+              <div>
+                <div class="fw-bold">Gotovina - Pouzeće</div>
+                <div class="text-muted small">Plaćanje pri dostavi</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div th:if="${order.notes != null and !order.notes.isEmpty()}" class="order-info-card">
+        <div class="card-header bg-light border-0 p-4">
+          <h6 class="mb-0">
+            <i class="bi bi-chat-text me-2 text-primary"></i>
+            Napomene
+          </h6>
+        </div>
+        <div class="card-body p-4">
+          <p class="mb-0" th:text="${order.notes}">Napomene o narudžbi</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-12 text-center">
+      <a th:href="@{/orders}" class="btn btn-outline-primary me-3">
+        <i class="bi bi-arrow-left me-2"></i>Nazad na narudžbe
+      </a>
+      <a th:href="@{/products}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-2"></i>Nova kupnja
+      </a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
