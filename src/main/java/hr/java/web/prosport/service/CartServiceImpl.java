@@ -14,10 +14,20 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+import hr.java.web.prosport.exception.CartException;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class CartServiceImpl implements CartService {
+
+    private static final String PRODUCT_NOT_FOUND_MSG = "Proizvod nije pronađen";
+    private static final String PRODUCT_NOT_AVAILABLE_MSG = "Proizvod nije dostupan";
+    private static final String INVALID_QUANTITY_MSG = "Neispravna količina";
+    private static final String INSUFFICIENT_STOCK_MSG = "Nema dovoljno proizvoda na zalihi";
+    private static final String CART_ITEM_NOT_FOUND_MSG = "Stavka košarice nije pronađena";
+    private static final String NO_PERMISSION_UPDATE_MSG = "Nemate dozvolu za ažuriranje ove stavke";
+    private static final String NO_PERMISSION_REMOVE_MSG = "Nemate dozvolu za uklanjanje ove stavke";
 
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
@@ -25,14 +35,14 @@ public class CartServiceImpl implements CartService {
     @Override
     public void addToCart(String sessionId, User user, Long productId, Integer quantity) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Proizvod nije pronađen"));
+                .orElseThrow(() -> new CartException(PRODUCT_NOT_FOUND_MSG));
 
         if (!product.isAvailable()) {
-            throw new RuntimeException("Proizvod nije dostupan");
+            throw new CartException(PRODUCT_NOT_AVAILABLE_MSG);
         }
 
         if (quantity <= 0 || quantity > product.getStockQuantity()) {
-            throw new RuntimeException("Neispravna količina");
+            throw new CartException(INVALID_QUANTITY_MSG);
         }
 
         Optional<CartItem> existingItem;
@@ -48,7 +58,7 @@ public class CartServiceImpl implements CartService {
             int newQuantity = item.getQuantity() + quantity;
 
             if (newQuantity > product.getStockQuantity()) {
-                throw new RuntimeException("Nema dovoljno proizvoda na zalihi");
+                throw new CartException(INSUFFICIENT_STOCK_MSG);
             }
 
             item.setQuantity(newQuantity);
@@ -67,11 +77,11 @@ public class CartServiceImpl implements CartService {
     @Override
     public void updateCartItemQuantity(String sessionId, User user, Long cartItemId, Integer quantity) {
         CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new RuntimeException("Stavka košarice nije pronađena"));
+                .orElseThrow(() -> new CartException(CART_ITEM_NOT_FOUND_MSG));
 
         if ((user != null && !cartItem.getUser().equals(user)) ||
                 (user == null && !sessionId.equals(cartItem.getSessionId()))) {
-            throw new RuntimeException("Nemate dozvolu za ažuriranje ove stavke");
+            throw new CartException(NO_PERMISSION_UPDATE_MSG);
         }
 
         if (quantity <= 0) {
@@ -80,7 +90,7 @@ public class CartServiceImpl implements CartService {
         }
 
         if (quantity > cartItem.getProduct().getStockQuantity()) {
-            throw new RuntimeException("Nema dovoljno proizvoda na zalihi");
+            throw new CartException(INSUFFICIENT_STOCK_MSG);
         }
 
         cartItem.setQuantity(quantity);
@@ -90,11 +100,11 @@ public class CartServiceImpl implements CartService {
     @Override
     public void removeFromCart(String sessionId, User user, Long cartItemId) {
         CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new RuntimeException("Stavka košarice nije pronađena"));
+                .orElseThrow(() -> new CartException(CART_ITEM_NOT_FOUND_MSG));
 
         if ((user != null && !cartItem.getUser().equals(user)) ||
                 (user == null && !sessionId.equals(cartItem.getSessionId()))) {
-            throw new RuntimeException("Nemate dozvolu za uklanjanje ove stavke");
+            throw new CartException(NO_PERMISSION_REMOVE_MSG);
         }
 
         cartItemRepository.delete(cartItem);

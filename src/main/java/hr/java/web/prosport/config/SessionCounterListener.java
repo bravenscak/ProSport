@@ -18,7 +18,7 @@ public class SessionCounterListener implements HttpSessionListener {
     @Override
     public void sessionCreated(HttpSessionEvent se) {
         int active = activeSessions.incrementAndGet();
-        se.getSession().setMaxInactiveInterval(60); // 1 minuta za test
+        se.getSession().setMaxInactiveInterval(60);
 
         log.info("NOVA SESIJA: {} (Aktivnih: {})",
                 se.getSession().getId(), active);

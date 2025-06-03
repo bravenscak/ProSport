@@ -26,6 +26,28 @@ import java.util.Map;
 @Slf4j
 public class CheckoutController {
 
+    private static final String ERROR_ATTR = "error";
+    private static final String SUCCESS_ATTR = "success";
+    private static final String MESSAGE_KEY = "message";
+    private static final String SUCCESS_KEY = "success";
+    private static final String REDIRECT_LOGIN = "redirect:/login";
+    private static final String REDIRECT_CART = "redirect:/cart";
+    private static final String REDIRECT_CHECKOUT = "redirect:/checkout";
+    private static final String REDIRECT_ORDERS = "redirect:/orders";
+    private static final String LOGIN_MESSAGE = "Please login to continue with checkout";
+    private static final String EMPTY_CART_MESSAGE = "Your cart is empty";
+    private static final String LOGIN_REQUIRED_MESSAGE = "You must be logged in to place an order";
+    private static final String PAYPAL_ERROR_MESSAGE = "PayPal payment failed. Please try again.";
+    private static final String ORDER_FAILED_MESSAGE = "Failed to place order. Please try again.";
+    private static final String PAYMENT_FAILED_MESSAGE = "Payment verification failed. Please contact support.";
+    private static final String PAYMENT_CANCELLED_MESSAGE = "Payment was cancelled. Your order has been cancelled.";
+    private static final String GENERAL_ERROR_MESSAGE = "An error occurred. Please try again.";
+    private static final String LOGIN_REQUIRED_VALIDATION = "You must be logged in";
+    private static final String ADDRESS_REQUIRED_MESSAGE = "Shipping address is required";
+    private static final String PHONE_REQUIRED_MESSAGE = "Phone number is required";
+    private static final String VALIDATION_FAILED_MESSAGE = "Validation failed";
+    private static final String VALIDATION_SUCCESS_MESSAGE = "Validation successful";
+
     private final CartService cartService;
     private final OrderService orderService;
     private final PayPalService payPalService;
@@ -36,14 +58,14 @@ public class CheckoutController {
                                Model model) {
 
         if (user == null) {
-            return "redirect:/login?message=Please login to continue with checkout";
+            return REDIRECT_LOGIN + "?message=" + LOGIN_MESSAGE;
         }
 
         String sessionId = session.getId();
         CartDto cart = cartService.getCart(sessionId, user);
 
         if (cart.getItems().isEmpty()) {
-            return "redirect:/cart?error=Your cart is empty";
+            return REDIRECT_CART + "?" + ERROR_ATTR + "=" + EMPTY_CART_MESSAGE;
         }
 
         model.addAttribute("cart", cart);
@@ -62,16 +84,16 @@ public class CheckoutController {
 
         try {
             if (user == null) {
-                attributes.addFlashAttribute("error", "You must be logged in to place an order");
-                return "redirect:/login";
+                attributes.addFlashAttribute(ERROR_ATTR, LOGIN_REQUIRED_MESSAGE);
+                return REDIRECT_LOGIN;
             }
 
             String sessionId = session.getId();
             CartDto cart = cartService.getCart(sessionId, user);
 
             if (cart.getItems().isEmpty()) {
-                attributes.addFlashAttribute("error", "Your cart is empty");
-                return "redirect:/cart";
+                attributes.addFlashAttribute(ERROR_ATTR, EMPTY_CART_MESSAGE);
+                return REDIRECT_CART;
             }
 
             Order.PaymentMethod method = Order.PaymentMethod.valueOf(paymentMethod.toUpperCase());
@@ -80,34 +102,15 @@ public class CheckoutController {
                     user, sessionId, method, shippingAddress, phoneNumber, notes);
 
             if (method == Order.PaymentMethod.PAYPAL) {
-                try {
-                    String paypalOrderId = payPalService.createOrder(cart, order.getOrderNumber());
-                    orderService.updatePayPalOrderId(order.getId(), paypalOrderId);
-
-                    cartService.clearCart(sessionId, user);
-
-                    return "redirect:/checkout/paypal/approve/" + paypalOrderId;
-
-                } catch (Exception e) {
-                    log.error("PayPal order creation failed: {}", e.getMessage(), e);
-                    attributes.addFlashAttribute("error", "PayPal payment failed. Please try again.");
-                    return "redirect:/checkout";
-                }
-
-            } else { // CASH_ON_DELIVERY
-                // Za gotovinu odmah postavi status na CONFIRMED
-                orderService.updateOrderStatus(order.getId(), Order.OrderStatus.CONFIRMED);
-                cartService.clearCart(sessionId, user);
-
-                attributes.addFlashAttribute("success",
-                        "Narudžba je uspješno kreirana! Broj narudžbe: " + order.getOrderNumber());
-                return "redirect:/orders/" + order.getId();
+                return handlePayPalPayment(cart, order, sessionId, user, attributes);
+            } else {
+                return handleCashOnDeliveryPayment(order, sessionId, user, attributes);
             }
 
         } catch (Exception e) {
             log.error("Order placement failed: {}", e.getMessage(), e);
-            attributes.addFlashAttribute("error", "Failed to place order. Please try again.");
-            return "redirect:/checkout";
+            attributes.addFlashAttribute(ERROR_ATTR, ORDER_FAILED_MESSAGE);
+            return REDIRECT_CHECKOUT;
         }
     }
 
@@ -126,7 +129,7 @@ public class CheckoutController {
 
         } catch (Exception e) {
             log.error("Failed to get PayPal approval URL: {}", e.getMessage(), e);
-            return "redirect:/checkout?error=Payment failed";
+            return REDIRECT_CHECKOUT + "?" + ERROR_ATTR + "=Payment failed";
         }
     }
 
@@ -144,15 +147,15 @@ public class CheckoutController {
 
             orderService.confirmPayPalPayment(paypalOrderId, captureResult.getCaptureId());
 
-            attributes.addFlashAttribute("success",
+            attributes.addFlashAttribute(SUCCESS_ATTR,
                     "Payment successful! Your order has been confirmed. Order number: " + order.getOrderNumber());
 
             return "redirect:/orders/" + order.getId();
 
         } catch (Exception e) {
             log.error("PayPal payment confirmation failed: {}", e.getMessage(), e);
-            attributes.addFlashAttribute("error", "Payment verification failed. Please contact support.");
-            return "redirect:/orders";
+            attributes.addFlashAttribute(ERROR_ATTR, PAYMENT_FAILED_MESSAGE);
+            return REDIRECT_ORDERS;
         }
     }
 
@@ -167,41 +170,41 @@ public class CheckoutController {
 
             orderService.updateOrderStatus(order.getId(), Order.OrderStatus.CANCELLED);
 
-            attributes.addFlashAttribute("error", "Payment was cancelled. Your order has been cancelled.");
-            return "redirect:/cart";
+            attributes.addFlashAttribute(ERROR_ATTR, PAYMENT_CANCELLED_MESSAGE);
+            return REDIRECT_CART;
 
         } catch (Exception e) {
             log.error("Error handling PayPal cancellation: {}", e.getMessage(), e);
-            attributes.addFlashAttribute("error", "An error occurred. Please try again.");
-            return "redirect:/cart";
+            attributes.addFlashAttribute(ERROR_ATTR, GENERAL_ERROR_MESSAGE);
+            return REDIRECT_CART;
         }
     }
 
     @PostMapping("/validate")
     @ResponseBody
-    public ResponseEntity<?> validateCheckout(@RequestParam("shippingAddress") String shippingAddress,
-                                              @RequestParam("phoneNumber") String phoneNumber,
-                                              HttpSession session,
-                                              @AuthenticationPrincipal User user) {
+    public ResponseEntity<Map<String, Object>> validateCheckout(@RequestParam("shippingAddress") String shippingAddress,
+                                                                @RequestParam("phoneNumber") String phoneNumber,
+                                                                HttpSession session,
+                                                                @AuthenticationPrincipal User user) {
         try {
             if (user == null) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "You must be logged in"
+                        SUCCESS_KEY, false,
+                        MESSAGE_KEY, LOGIN_REQUIRED_VALIDATION
                 ));
             }
 
             if (shippingAddress.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Shipping address is required"
+                        SUCCESS_KEY, false,
+                        MESSAGE_KEY, ADDRESS_REQUIRED_MESSAGE
                 ));
             }
 
             if (phoneNumber.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Phone number is required"
+                        SUCCESS_KEY, false,
+                        MESSAGE_KEY, PHONE_REQUIRED_MESSAGE
                 ));
             }
 
@@ -210,22 +213,43 @@ public class CheckoutController {
 
             if (cart.getItems().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Your cart is empty"
+                        SUCCESS_KEY, false,
+                        MESSAGE_KEY, EMPTY_CART_MESSAGE
                 ));
             }
 
             return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Validation successful"
+                    SUCCESS_KEY, true,
+                    MESSAGE_KEY, VALIDATION_SUCCESS_MESSAGE
             ));
 
         } catch (Exception e) {
             log.error("Checkout validation error: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "Validation failed"
+                    SUCCESS_KEY, false,
+                    MESSAGE_KEY, VALIDATION_FAILED_MESSAGE
             ));
         }
+    }
+
+    private String handlePayPalPayment(CartDto cart, OrderDto order, String sessionId, User user, RedirectAttributes attributes) {
+        try {
+            String paypalOrderId = payPalService.createOrder(cart, order.getOrderNumber());
+            orderService.updatePayPalOrderId(order.getId(), paypalOrderId);
+            cartService.clearCart(sessionId, user);
+            return "redirect:/checkout/paypal/approve/" + paypalOrderId;
+        } catch (Exception e) {
+            log.error("PayPal order creation failed: {}", e.getMessage(), e);
+            attributes.addFlashAttribute(ERROR_ATTR, PAYPAL_ERROR_MESSAGE);
+            return REDIRECT_CHECKOUT;
+        }
+    }
+
+    private String handleCashOnDeliveryPayment(OrderDto order, String sessionId, User user, RedirectAttributes attributes) {
+        orderService.updateOrderStatus(order.getId(), Order.OrderStatus.CONFIRMED);
+        cartService.clearCart(sessionId, user);
+        attributes.addFlashAttribute(SUCCESS_ATTR,
+                "Narudžba je uspješno kreirana! Broj narudžbe: " + order.getOrderNumber());
+        return "redirect:/orders/" + order.getId();
     }
 }

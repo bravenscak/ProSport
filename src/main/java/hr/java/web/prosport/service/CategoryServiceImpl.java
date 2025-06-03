@@ -50,7 +50,6 @@ public class CategoryServiceImpl implements CategoryService {
         Category existingCategory = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Kategorija nije pronađena"));
 
-        // Provjeri da li novo ime već postoji (osim za trenutnu kategoriju)
         Optional<Category> categoryWithSameName = categoryRepository.findByName(categoryDto.getName());
         if (categoryWithSameName.isPresent() && !categoryWithSameName.get().getId().equals(id)) {
             throw new RuntimeException("Kategorija s nazivom '" + categoryDto.getName() + "' već postoji");
@@ -68,7 +67,6 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Kategorija nije pronađena"));
 
-        // Provjeri da li kategorija ima proizvode
         if (category.getProducts() != null && !category.getProducts().isEmpty()) {
             throw new RuntimeException("Ne možete obrisati kategoriju koja sadrži proizvode");
         }

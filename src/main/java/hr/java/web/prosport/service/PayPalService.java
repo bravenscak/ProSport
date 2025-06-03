@@ -5,18 +5,30 @@ import com.paypal.http.HttpResponse;
 import com.paypal.orders.*;
 import hr.java.web.prosport.dto.CartDto;
 import hr.java.web.prosport.dto.CartItemDto;
+import hr.java.web.prosport.exception.PayPalException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PayPalService {
+
+    private static final String CURRENCY_CODE = "EUR";
+    private static final String BRAND_NAME = "ProSport";
+    private static final String LANDING_PAGE = "BILLING";
+    private static final String USER_ACTION = "PAY_NOW";
+    private static final String CAPTURE_INTENT = "CAPTURE";
+    private static final String CATEGORY_PHYSICAL_GOODS = "PHYSICAL_GOODS";
+    private static final String ORDER_DESCRIPTION_PREFIX = "ProSport narudžba #";
+    private static final String ZERO_AMOUNT = "0.00";
+    private static final String CREATE_ORDER_ERROR = "Failed to create PayPal order: ";
+    private static final String CAPTURE_ORDER_ERROR = "Failed to capture PayPal order: ";
+    private static final String GET_ORDER_ERROR = "Failed to get PayPal order: ";
 
     private final PayPalHttpClient payPalHttpClient;
 
@@ -26,7 +38,7 @@ public class PayPalService {
     @Value("${paypal.cancel-url}")
     private String cancelUrl;
 
-    public String createOrder(CartDto cart, String orderNumber) throws Exception {
+    public String createOrder(CartDto cart, String orderNumber) {
         log.info("Creating PayPal order for cart with {} items, total: {}",
                 cart.getTotalItems(), cart.getTotalAmount());
 
@@ -42,11 +54,11 @@ public class PayPalService {
 
         } catch (Exception e) {
             log.error("Error creating PayPal order: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to create PayPal order: " + e.getMessage());
+            throw new PayPalException(CREATE_ORDER_ERROR + e.getMessage(), e);
         }
     }
 
-    public CaptureResult captureOrder(String paypalOrderId) throws Exception {
+    public CaptureResult captureOrder(String paypalOrderId) {
         log.info("Capturing PayPal order: {}", paypalOrderId);
 
         OrdersCaptureRequest request = new OrdersCaptureRequest(paypalOrderId);
@@ -63,11 +75,11 @@ public class PayPalService {
 
         } catch (Exception e) {
             log.error("Error capturing PayPal order {}: {}", paypalOrderId, e.getMessage(), e);
-            throw new RuntimeException("Failed to capture PayPal order: " + e.getMessage());
+            throw new PayPalException(CAPTURE_ORDER_ERROR + e.getMessage(), e);
         }
     }
 
-    public Order getOrder(String paypalOrderId) throws Exception {
+    public Order getOrder(String paypalOrderId) {
         log.info("Getting PayPal order details: {}", paypalOrderId);
 
         OrdersGetRequest request = new OrdersGetRequest(paypalOrderId);
@@ -78,20 +90,18 @@ public class PayPalService {
 
         } catch (Exception e) {
             log.error("Error getting PayPal order {}: {}", paypalOrderId, e.getMessage(), e);
-            throw new RuntimeException("Failed to get PayPal order: " + e.getMessage());
+            throw new PayPalException(GET_ORDER_ERROR + e.getMessage(), e);
         }
     }
 
     private OrderRequest buildOrderRequest(CartDto cart, String orderNumber) {
         OrderRequest orderRequest = new OrderRequest();
-        orderRequest.checkoutPaymentIntent("CAPTURE");
-
-        orderRequest.checkoutPaymentIntent("CAPTURE");
+        orderRequest.checkoutPaymentIntent(CAPTURE_INTENT);
 
         ApplicationContext applicationContext = new ApplicationContext()
-                .brandName("ProSport")
-                .landingPage("BILLING")
-                .userAction("PAY_NOW")
+                .brandName(BRAND_NAME)
+                .landingPage(LANDING_PAGE)
+                .userAction(USER_ACTION)
                 .returnUrl(successUrl)
                 .cancelUrl(cancelUrl);
         orderRequest.applicationContext(applicationContext);
@@ -99,7 +109,7 @@ public class PayPalService {
         List<PurchaseUnitRequest> purchaseUnits = List.of(
                 new PurchaseUnitRequest()
                         .referenceId(orderNumber)
-                        .description("ProSport narudžba #" + orderNumber)
+                        .description(ORDER_DESCRIPTION_PREFIX + orderNumber)
                         .customId(orderNumber)
                         .amountWithBreakdown(buildAmount(cart))
                         .items(buildItems(cart))
@@ -113,20 +123,20 @@ public class PayPalService {
         String totalAmount = cart.getTotalAmount().toString();
 
         return new AmountWithBreakdown()
-                .currencyCode("EUR")
+                .currencyCode(CURRENCY_CODE)
                 .value(totalAmount)
                 .amountBreakdown(
                         new AmountBreakdown()
-                                .itemTotal(new Money().currencyCode("EUR").value(totalAmount))
-                                .shipping(new Money().currencyCode("EUR").value("0.00"))
-                                .taxTotal(new Money().currencyCode("EUR").value("0.00"))
+                                .itemTotal(new Money().currencyCode(CURRENCY_CODE).value(totalAmount))
+                                .shipping(new Money().currencyCode(CURRENCY_CODE).value(ZERO_AMOUNT))
+                                .taxTotal(new Money().currencyCode(CURRENCY_CODE).value(ZERO_AMOUNT))
                 );
     }
 
     private List<Item> buildItems(CartDto cart) {
         return cart.getItems().stream()
                 .map(this::buildItem)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private Item buildItem(CartItemDto cartItem) {
@@ -135,10 +145,10 @@ public class PayPalService {
                 .description(cartItem.getProductBrand() + " - " + cartItem.getCategoryName())
                 .sku(cartItem.getProductId().toString())
                 .unitAmount(new Money()
-                        .currencyCode("EUR")
+                        .currencyCode(CURRENCY_CODE)
                         .value(cartItem.getPriceAtTime().toString()))
                 .quantity(cartItem.getQuantity().toString())
-                .category("PHYSICAL_GOODS");
+                .category(CATEGORY_PHYSICAL_GOODS);
     }
 
     public static class CaptureResult {

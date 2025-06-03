@@ -332,23 +332,13 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
 <script>
-    console.log('Script loaded!');
-
     const imageInput = document.getElementById('image');
     const uploadArea = document.getElementById('imageUploadArea');
     const newImagePreview = document.getElementById('newImagePreview');
     const previewImg = document.getElementById('previewImg');
 
-    console.log('Elements found:', {
-        imageInput: !!imageInput,
-        uploadArea: !!uploadArea,
-        newImagePreview: !!newImagePreview,
-        previewImg: !!previewImg
-    });
-
     if (uploadArea && imageInput) {
         uploadArea.addEventListener('click', () => {
-            console.log('Upload area clicked');
             imageInput.click();
         });
 
@@ -377,14 +367,11 @@
     }
 
     function handleImageSelect() {
-        console.log('handleImageSelect called');
         const file = imageInput.files[0];
-        console.log('Selected file:', file);
 
         if (file && file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                console.log('Image loaded for preview');
                 previewImg.src = e.target.result;
                 newImagePreview.style.display = 'block';
             };
@@ -393,14 +380,12 @@
     }
 
     function clearImagePreview() {
-        console.log('Clearing image preview');
         imageInput.value = '';
         newImagePreview.style.display = 'none';
         previewImg.src = '';
     }
 
     function createNewCategory() {
-        console.log('Creating new category...');
         const name = $('#newCategoryName').val();
         const description = $('#newCategoryDescription').val() || '';
 
@@ -426,8 +411,6 @@
                 description: description.trim()
             },
             success: function(category) {
-                console.log('Category created successfully:', category);
-
                 $('#categoryId').append(new Option(category.name, category.id, true, true));
 
                 $('#newCategoryModal').modal('hide');
@@ -448,7 +431,6 @@
                 }, 5000);
             },
             error: function(xhr, status, error) {
-                console.error('Error creating category:', xhr.responseText);
                 alert('Greška pri kreiranju kategorije: ' + (xhr.responseText || error));
             }
         });

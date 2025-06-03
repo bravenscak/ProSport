@@ -13,36 +13,42 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequiredArgsConstructor
 public class HomeController {
 
+    private static final String CATEGORIES_ATTR = "categories";
+    private static final String PRODUCTS_ATTR = "products";
+    private static final String SELECTED_CATEGORY_ATTR = "selectedCategory";
+    private static final String PRODUCT_ATTR = "product";
+    private static final String PRODUCT_NOT_FOUND_MSG = "Product not found";
+
     private final CategoryService categoryService;
     private final ProductService productService;
 
     @GetMapping({"/", "/home"})
     public String home(Model model) {
-        model.addAttribute("categories", categoryService.findAll());
-        model.addAttribute("products", productService.findAvailable());
+        model.addAttribute(CATEGORIES_ATTR, categoryService.findAll());
+        model.addAttribute(PRODUCTS_ATTR, productService.findAvailable());
         return "home";
     }
 
     @GetMapping("/products")
     public String products(@RequestParam(required = false) Long categoryId, Model model) {
-        model.addAttribute("categories", categoryService.findAll());
+        model.addAttribute(CATEGORIES_ATTR, categoryService.findAll());
 
         if (categoryId != null) {
-            model.addAttribute("products", productService.findByCategoryId(categoryId));
-            model.addAttribute("selectedCategory", categoryService.findById(categoryId).orElse(null));
+            model.addAttribute(PRODUCTS_ATTR, productService.findByCategoryId(categoryId));
+            model.addAttribute(SELECTED_CATEGORY_ATTR, categoryService.findById(categoryId).orElse(null));
         } else {
-            model.addAttribute("products", productService.findAvailable());
+            model.addAttribute(PRODUCTS_ATTR, productService.findAvailable());
         }
 
-        return "products";
+        return PRODUCTS_ATTR;
     }
 
     @GetMapping("/products/{id}")
     public String productDetails(@PathVariable Long id, Model model) {
         var product = productService.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException(PRODUCT_NOT_FOUND_MSG));
 
-        model.addAttribute("product", product);
+        model.addAttribute(PRODUCT_ATTR, product);
         return "product-details";
     }
 }

@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +35,7 @@ public class LoginHistoryServiceImpl implements LoginHistoryService {
         return loginHistoryRepository.findAllByOrderByLoginTimeDesc()
                 .stream()
                 .map(this::mapToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -45,7 +44,7 @@ public class LoginHistoryServiceImpl implements LoginHistoryService {
         return loginHistoryRepository.findByUsernameOrderByLoginTimeDesc(username)
                 .stream()
                 .map(this::mapToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -54,7 +53,7 @@ public class LoginHistoryServiceImpl implements LoginHistoryService {
         return loginHistoryRepository.findByFilters(username, startDate, endDate)
                 .stream()
                 .map(this::mapToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

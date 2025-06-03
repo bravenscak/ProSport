@@ -24,6 +24,25 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminController {
 
+    private static final String REDIRECT_ADMIN_CATEGORIES = "redirect:/admin/categories";
+    private static final String REDIRECT_ADMIN_PRODUCTS = "redirect:/admin/products";
+    private static final String REDIRECT_ADMIN_PRODUCTS_NEW = "redirect:/admin/products/new";
+    private static final String ADMIN_CATEGORY_FORM = "admin/category-form";
+    private static final String ADMIN_PRODUCT_FORM = "admin/product-form";
+    private static final String CATEGORIES_ATTR = "categories";
+    private static final String SUCCESS_ATTR = "success";
+    private static final String ERROR_ATTR = "error";
+    private static final String EDIT_PATH = "/edit";
+    private static final String CATEGORY_CREATED_MSG = "Kategorija je uspješno kreirana!";
+    private static final String CATEGORY_UPDATED_MSG = "Kategorija je uspješno ažurirana!";
+    private static final String CATEGORY_DELETED_MSG = "Kategorija je uspješno obrisana!";
+    private static final String PRODUCT_CREATED_MSG = "Proizvod je uspješno kreiran!";
+    private static final String PRODUCT_UPDATED_MSG = "Proizvod je uspješno ažuriran!";
+    private static final String PRODUCT_DELETED_MSG = "Proizvod je uspješno obrisan!";
+    private static final String PRODUCT_NOT_FOUND_MSG = "Product not found";
+    private static final String INVALID_IMAGE_MSG = "Neispravna datoteka. Molimo uploadajte JPG, PNG, GIF ili WebP sliku manju od 10MB.";
+    private static final String IMAGE_UPLOAD_ERROR_MSG = "Greška pri uploadu slike: ";
+
     private final CategoryService categoryService;
     private final ProductService productService;
     private final ImageUploadService imageUploadService;
@@ -32,12 +51,12 @@ public class AdminController {
 
     @GetMapping
     public String adminRoot() {
-        return "redirect:/admin/products";
+        return REDIRECT_ADMIN_PRODUCTS;
     }
 
     @GetMapping("/categories")
     public String manageCategories(Model model) {
-        model.addAttribute("categories", categoryService.findAll());
+        model.addAttribute(CATEGORIES_ATTR, categoryService.findAll());
         return "admin/categories";
     }
 
@@ -46,22 +65,22 @@ public class AdminController {
                                BindingResult result,
                                RedirectAttributes attributes) {
         if (result.hasErrors()) {
-            return "admin/category-form";
+            return ADMIN_CATEGORY_FORM;
         }
 
         try {
             categoryService.createCategory(categoryDto);
-            attributes.addFlashAttribute("success", "Kategorija je uspješno kreirana!");
+            attributes.addFlashAttribute(SUCCESS_ATTR, CATEGORY_CREATED_MSG);
         } catch (RuntimeException e) {
-            attributes.addFlashAttribute("error", e.getMessage());
+            attributes.addFlashAttribute(ERROR_ATTR, e.getMessage());
         }
-        return "redirect:/admin/categories";
+        return REDIRECT_ADMIN_CATEGORIES;
     }
 
     @GetMapping("/categories/new")
     public String newCategory(Model model) {
         model.addAttribute("category", new CategoryDto());
-        return "admin/category-form";
+        return ADMIN_CATEGORY_FORM;
     }
 
     @GetMapping("/categories/{id}/edit")
@@ -69,7 +88,7 @@ public class AdminController {
         CategoryDto category = categoryService.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
         model.addAttribute("category", category);
-        return "admin/category-form";
+        return ADMIN_CATEGORY_FORM;
     }
 
     @PostMapping("/categories/{id}")
@@ -78,26 +97,26 @@ public class AdminController {
                                  BindingResult result,
                                  RedirectAttributes attributes) {
         if (result.hasErrors()) {
-            return "admin/category-form";
+            return ADMIN_CATEGORY_FORM;
         }
         try {
             categoryService.updateCategory(id, categoryDto);
-            attributes.addFlashAttribute("success", "Kategorija je uspješno ažurirana!");
+            attributes.addFlashAttribute(SUCCESS_ATTR, CATEGORY_UPDATED_MSG);
         } catch (RuntimeException e) {
-            attributes.addFlashAttribute("error", e.getMessage());
+            attributes.addFlashAttribute(ERROR_ATTR, e.getMessage());
         }
-        return "redirect:/admin/categories";
+        return REDIRECT_ADMIN_CATEGORIES;
     }
 
     @PostMapping("/categories/{id}/delete")
     public String deleteCategory(@PathVariable Long id, RedirectAttributes attributes) {
         try {
             categoryService.deleteCategory(id);
-            attributes.addFlashAttribute("success", "Kategorija je uspješno obrisana!");
+            attributes.addFlashAttribute(SUCCESS_ATTR, CATEGORY_DELETED_MSG);
         } catch (RuntimeException e) {
-            attributes.addFlashAttribute("error", e.getMessage());
+            attributes.addFlashAttribute(ERROR_ATTR, e.getMessage());
         }
-        return "redirect:/admin/categories";
+        return REDIRECT_ADMIN_CATEGORIES;
     }
 
     @PostMapping("/categories/quick")
@@ -116,8 +135,8 @@ public class AdminController {
     @GetMapping("/products/new")
     public String newProduct(Model model) {
         model.addAttribute("product", new ProductDto());
-        model.addAttribute("categories", categoryService.findAll());
-        return "admin/product-form";
+        model.addAttribute(CATEGORIES_ATTR, categoryService.findAll());
+        return ADMIN_PRODUCT_FORM;
     }
 
     @PostMapping("/products")
@@ -127,8 +146,8 @@ public class AdminController {
         try {
             if (imageFile != null && !imageFile.isEmpty()) {
                 if (!imageUploadService.isValidImage(imageFile)) {
-                    attributes.addFlashAttribute("error", "Neispravna datoteka. Molimo uploadajte JPG, PNG, GIF ili WebP sliku manju od 10MB.");
-                    return "redirect:/admin/products/new";
+                    attributes.addFlashAttribute(ERROR_ATTR, INVALID_IMAGE_MSG);
+                    return REDIRECT_ADMIN_PRODUCTS_NEW;
                 }
 
                 String imageUrl = imageUploadService.uploadImage(imageFile);
@@ -136,24 +155,24 @@ public class AdminController {
             }
 
             productService.createProduct(productDto);
-            attributes.addFlashAttribute("success", "Proizvod je uspješno kreiran!");
+            attributes.addFlashAttribute(SUCCESS_ATTR, PRODUCT_CREATED_MSG);
         } catch (IOException e) {
-            attributes.addFlashAttribute("error", "Greška pri uploadu slike: " + e.getMessage());
-            return "redirect:/admin/products/new";
+            attributes.addFlashAttribute(ERROR_ATTR, IMAGE_UPLOAD_ERROR_MSG + e.getMessage());
+            return REDIRECT_ADMIN_PRODUCTS_NEW;
         } catch (RuntimeException e) {
-            attributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/admin/products/new";
+            attributes.addFlashAttribute(ERROR_ATTR, e.getMessage());
+            return REDIRECT_ADMIN_PRODUCTS_NEW;
         }
-        return "redirect:/admin/products";
+        return REDIRECT_ADMIN_PRODUCTS;
     }
 
     @GetMapping("/products/{id}/edit")
     public String editProduct(@PathVariable Long id, Model model) {
         ProductDto product = productService.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException(PRODUCT_NOT_FOUND_MSG));
         model.addAttribute("product", product);
-        model.addAttribute("categories", categoryService.findAll());
-        return "admin/product-form";
+        model.addAttribute(CATEGORIES_ATTR, categoryService.findAll());
+        return ADMIN_PRODUCT_FORM;
     }
 
     @PostMapping("/products/{id}")
@@ -162,12 +181,12 @@ public class AdminController {
                                 RedirectAttributes attributes) {
         try {
             ProductDto existingProduct = productService.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Product not found"));
+                    .orElseThrow(() -> new RuntimeException(PRODUCT_NOT_FOUND_MSG));
 
             if (imageFile != null && !imageFile.isEmpty()) {
                 if (!imageUploadService.isValidImage(imageFile)) {
-                    attributes.addFlashAttribute("error", "Neispravna datoteka. Molimo uploadajte JPG, PNG, GIF ili WebP sliku manju od 10MB.");
-                    return "redirect:/admin/products/" + id + "/edit";
+                    attributes.addFlashAttribute(ERROR_ATTR, INVALID_IMAGE_MSG);
+                    return "redirect:/admin/products/" + id + EDIT_PATH;
                 }
 
                 if (existingProduct.getImageUrl() != null) {
@@ -181,33 +200,33 @@ public class AdminController {
             }
 
             productService.updateProduct(id, productDto);
-            attributes.addFlashAttribute("success", "Proizvod je uspješno ažuriran!");
+            attributes.addFlashAttribute(SUCCESS_ATTR, PRODUCT_UPDATED_MSG);
         } catch (IOException e) {
-            attributes.addFlashAttribute("error", "Greška pri uploadu slike: " + e.getMessage());
-            return "redirect:/admin/products/" + id + "/edit";
+            attributes.addFlashAttribute(ERROR_ATTR, IMAGE_UPLOAD_ERROR_MSG + e.getMessage());
+            return "redirect:/admin/products/" + id + EDIT_PATH;
         } catch (RuntimeException e) {
-            attributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/admin/products/" + id + "/edit";
+            attributes.addFlashAttribute(ERROR_ATTR, e.getMessage());
+            return "redirect:/admin/products/" + id + EDIT_PATH;
         }
-        return "redirect:/admin/products";
+        return REDIRECT_ADMIN_PRODUCTS;
     }
 
     @PostMapping("/products/{id}/delete")
     public String deleteProduct(@PathVariable Long id, RedirectAttributes attributes) {
         try {
             ProductDto product = productService.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Product not found"));
+                    .orElseThrow(() -> new RuntimeException(PRODUCT_NOT_FOUND_MSG));
 
             if (product.getImageUrl() != null) {
                 imageUploadService.deleteImage(product.getImageUrl());
             }
 
             productService.deleteProduct(id);
-            attributes.addFlashAttribute("success", "Proizvod je uspješno obrisan!");
+            attributes.addFlashAttribute(SUCCESS_ATTR, PRODUCT_DELETED_MSG);
         } catch (RuntimeException e) {
-            attributes.addFlashAttribute("error", e.getMessage());
+            attributes.addFlashAttribute(ERROR_ATTR, e.getMessage());
         }
-        return "redirect:/admin/products";
+        return REDIRECT_ADMIN_PRODUCTS;
     }
 
     @GetMapping("/login-history")

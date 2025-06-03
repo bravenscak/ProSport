@@ -15,6 +15,10 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class CartPreservationFilter extends OncePerRequestFilter {
 
+    private static final String LOGIN_URI = "/login";
+    private static final String POST_METHOD = "POST";
+    private static final String OLD_SESSION_ID_ATTR = "oldSessionId";
+
     private final CartService cartService;
 
     @Override
@@ -22,11 +26,9 @@ public class CartPreservationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        if ("/login".equals(request.getRequestURI()) && "POST".equals(request.getMethod())) {
+        if (LOGIN_URI.equals(request.getRequestURI()) && POST_METHOD.equals(request.getMethod())) {
             String oldSessionId = request.getSession().getId();
-            Integer cartCount = cartService.getCartItemCount(oldSessionId, null);
-
-            request.setAttribute("oldSessionId", oldSessionId);
+            request.setAttribute(OLD_SESSION_ID_ATTR, oldSessionId);
         }
 
         filterChain.doFilter(request, response);

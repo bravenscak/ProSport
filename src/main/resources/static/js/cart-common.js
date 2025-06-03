@@ -71,7 +71,6 @@ class CartManager {
                 }
             }
         } catch (error) {
-            console.error('Error:', error);
             this.showNotification('error', 'Greška pri dodavanju u košaricu');
             if (button) {
                 button.disabled = false;
@@ -89,7 +88,6 @@ class CartManager {
                 const count = await response.json();
                 this.setBadgeCount(count);
             } catch (error) {
-                console.error('Error fetching cart count:', error);
             }
         }
     }

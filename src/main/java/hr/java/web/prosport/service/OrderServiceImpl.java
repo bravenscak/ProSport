@@ -3,11 +3,11 @@ package hr.java.web.prosport.service;
 import hr.java.web.prosport.dto.CartDto;
 import hr.java.web.prosport.dto.OrderDto;
 import hr.java.web.prosport.dto.OrderItemDto;
+import hr.java.web.prosport.exception.OrderException;
 import hr.java.web.prosport.model.*;
 import hr.java.web.prosport.repository.OrderRepository;
 import hr.java.web.prosport.repository.OrderItemRepository;
 import hr.java.web.prosport.repository.ProductRepository;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,13 +17,21 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
 public class OrderServiceImpl implements OrderService {
+
+    private static final String EMPTY_CART_MSG = "Cannot create order with empty cart";
+    private static final String ORDER_NOT_FOUND_MSG = "Order not found";
+    private static final String ORDER_NOT_FOUND_FOR_PAYPAL_MSG = "Order not found for PayPal ID: ";
+    private static final String PRODUCT_NOT_FOUND_MSG = "Product not found: ";
+    private static final String INSUFFICIENT_STOCK_MSG = "Insufficient stock for product: ";
+    private static final String ORDER_NUMBER_PREFIX = "PS-";
+    private static final String DATE_TIME_PATTERN = "yyyyMMddHHmmss";
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -39,7 +47,7 @@ public class OrderServiceImpl implements OrderService {
         CartDto cart = getCartForUser(user);
 
         if (cart.getItems().isEmpty()) {
-            throw new RuntimeException("Cannot create order with empty cart");
+            throw new OrderException(EMPTY_CART_MSG);
         }
 
         String orderNumber = generateOrderNumber();
@@ -56,7 +64,7 @@ public class OrderServiceImpl implements OrderService {
                     OrderItem orderItem = createOrderItem(savedOrder, cartItem);
                     return orderItemRepository.save(orderItem);
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         savedOrder.setOrderItems(orderItems);
 
@@ -74,7 +82,7 @@ public class OrderServiceImpl implements OrderService {
         CartDto cart = cartService.getCart(sessionId, user);
 
         if (cart.getItems().isEmpty()) {
-            throw new RuntimeException("Cannot create order with empty cart");
+            throw new OrderException(EMPTY_CART_MSG);
         }
 
         String orderNumber = generateOrderNumber();
@@ -91,7 +99,7 @@ public class OrderServiceImpl implements OrderService {
                     OrderItem orderItem = createOrderItem(savedOrder, cartItem);
                     return orderItemRepository.save(orderItem);
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         savedOrder.setOrderItems(orderItems);
 
@@ -104,7 +112,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderDto updateOrderStatus(Long orderId, Order.OrderStatus status) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new OrderException(ORDER_NOT_FOUND_MSG));
 
         order.setStatus(status);
         order.setUpdatedAt(LocalDateTime.now());
@@ -118,7 +126,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderDto updatePayPalOrderId(Long orderId, String paypalOrderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new OrderException(ORDER_NOT_FOUND_MSG));
 
         order.setPaypalOrderId(paypalOrderId);
         order.setUpdatedAt(LocalDateTime.now());
@@ -132,7 +140,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderDto confirmPayPalPayment(String paypalOrderId, String paypalPaymentId) {
         Order order = orderRepository.findByPaypalOrderId(paypalOrderId)
-                .orElseThrow(() -> new RuntimeException("Order not found for PayPal ID: " + paypalOrderId));
+                .orElseThrow(() -> new OrderException(ORDER_NOT_FOUND_FOR_PAYPAL_MSG + paypalOrderId));
 
         order.setPaypalPaymentId(paypalPaymentId);
         order.setStatus(Order.OrderStatus.CONFIRMED);
@@ -168,7 +176,7 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.findByUserOrderByCreatedAtDesc(user)
                 .stream()
                 .map(this::mapToDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -177,7 +185,7 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.findAll()
                 .stream()
                 .map(this::mapToDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -186,7 +194,7 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.findByFilters(username, startDate, endDate)
                 .stream()
                 .map(this::mapToDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -195,7 +203,7 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.findByPaymentMethod(paymentMethod)
                 .stream()
                 .map(this::mapToDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -206,20 +214,19 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public String generateOrderNumber() {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        String randomSuffix = String.valueOf((int)(Math.random() * 1000));
-        return "PS-" + timestamp + "-" + String.format("%03d", Integer.parseInt(randomSuffix));
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern(DATE_TIME_PATTERN));
+        int randomSuffix = ThreadLocalRandom.current().nextInt(1000);
+        return ORDER_NUMBER_PREFIX + timestamp + "-" + String.format("%03d", randomSuffix);
     }
 
     private CartDto getCartForUser(User user) {
         log.warn("Using dummy cart implementation - this should be replaced with actual cart retrieval");
-
         return new CartDto(List.of());
     }
 
     private OrderItem createOrderItem(Order order, hr.java.web.prosport.dto.CartItemDto cartItem) {
         Product product = productRepository.findById(cartItem.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found: " + cartItem.getProductId()));
+                .orElseThrow(() -> new OrderException(PRODUCT_NOT_FOUND_MSG + cartItem.getProductId()));
 
         return new OrderItem(order, product, cartItem.getQuantity(), cartItem.getPriceAtTime());
     }
@@ -227,11 +234,11 @@ public class OrderServiceImpl implements OrderService {
     private void updateProductStock(CartDto cart) {
         for (hr.java.web.prosport.dto.CartItemDto item : cart.getItems()) {
             Product product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Product not found: " + item.getProductId()));
+                    .orElseThrow(() -> new OrderException(PRODUCT_NOT_FOUND_MSG + item.getProductId()));
 
             int newStock = product.getStockQuantity() - item.getQuantity();
             if (newStock < 0) {
-                throw new RuntimeException("Insufficient stock for product: " + product.getName());
+                throw new OrderException(INSUFFICIENT_STOCK_MSG + product.getName());
             }
 
             product.setStockQuantity(newStock);
@@ -263,7 +270,7 @@ public class OrderServiceImpl implements OrderService {
         if (order.getOrderItems() != null) {
             List<OrderItemDto> itemDtos = order.getOrderItems().stream()
                     .map(this::mapOrderItemToDTO)
-                    .collect(Collectors.toList());
+                    .toList();
             dto.setOrderItems(itemDtos);
             dto.setTotalItems(itemDtos.stream().mapToInt(OrderItemDto::getQuantity).sum());
         }

@@ -1,6 +1,7 @@
 package hr.java.web.prosport.service;
 
 import hr.java.web.prosport.dto.ProductDto;
+import hr.java.web.prosport.exception.ProductException;
 import hr.java.web.prosport.model.Category;
 import hr.java.web.prosport.model.Product;
 import hr.java.web.prosport.repository.CategoryRepository;
@@ -14,6 +15,9 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
+
+    private static final String CATEGORY_NOT_FOUND_MSG = "Kategorija nije pronađena";
+    private static final String PRODUCT_NOT_FOUND_MSG = "Proizvod nije pronađen";
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
@@ -55,7 +59,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductDto createProduct(ProductDto productDto) {
         Category category = categoryRepository.findById(productDto.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Kategorija nije pronađena"));
+                .orElseThrow(() -> new ProductException(CATEGORY_NOT_FOUND_MSG));
 
         Product product = mapToEntity(productDto);
         product.setCategory(category);
@@ -68,10 +72,10 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductDto updateProduct(Long id, ProductDto productDto) {
         Product existingProduct = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Proizvod nije pronađen"));
+                .orElseThrow(() -> new ProductException(PRODUCT_NOT_FOUND_MSG));
 
         Category category = categoryRepository.findById(productDto.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Kategorija nije pronađena"));
+                .orElseThrow(() -> new ProductException(CATEGORY_NOT_FOUND_MSG));
 
         existingProduct.setName(productDto.getName());
         existingProduct.setDescription(productDto.getDescription());
@@ -79,7 +83,7 @@ public class ProductServiceImpl implements ProductService {
         existingProduct.setStockQuantity(productDto.getStockQuantity());
         existingProduct.setBrand(productDto.getBrand());
         existingProduct.setCategory(category);
-        existingProduct.setAvailable(productDto.getAvailable() != null ? productDto.getAvailable() : true);
+        existingProduct.setAvailable(Boolean.TRUE.equals(productDto.getAvailable()));
 
         if (productDto.getImageUrl() != null) {
             existingProduct.setImageUrl(productDto.getImageUrl());
@@ -92,7 +96,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Proizvod nije pronađen"));
+                .orElseThrow(() -> new ProductException(PRODUCT_NOT_FOUND_MSG));
         productRepository.delete(product);
     }
 
@@ -104,7 +108,7 @@ public class ProductServiceImpl implements ProductService {
         product.setPrice(dto.getPrice());
         product.setStockQuantity(dto.getStockQuantity());
         product.setBrand(dto.getBrand());
-        product.setAvailable(dto.getAvailable() != null ? dto.getAvailable() : true);
+        product.setAvailable(Boolean.TRUE.equals(dto.getAvailable()));
         product.setImageUrl(dto.getImageUrl());
         return product;
     }

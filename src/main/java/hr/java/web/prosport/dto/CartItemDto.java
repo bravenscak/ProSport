@@ -31,6 +31,10 @@ public class CartItemDto {
         this.priceAtTime = priceAtTime;
         this.quantity = quantity;
         this.maxQuantity = maxQuantity;
+        calculateTotalPrice();
+    }
+
+    private void calculateTotalPrice() {
         this.totalPrice = priceAtTime.multiply(BigDecimal.valueOf(quantity));
     }
 }

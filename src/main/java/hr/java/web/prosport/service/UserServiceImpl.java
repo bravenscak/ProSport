@@ -1,6 +1,7 @@
 package hr.java.web.prosport.service;
 
 import hr.java.web.prosport.dto.UserDto;
+import hr.java.web.prosport.exception.UserException;
 import hr.java.web.prosport.model.User;
 import hr.java.web.prosport.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,30 +15,35 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService, UserDetailsService {
 
+    private static final String USER_NOT_FOUND_MSG = "User not found: ";
+    private static final String USERNAME_EXISTS_MSG = "Username already exists";
+    private static final String EMAIL_EXISTS_MSG = "Email already exists";
+    private static final String USER_NOT_FOUND_SIMPLE_MSG = "User not found";
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException(USER_NOT_FOUND_MSG + username));
     }
 
     @Override
-    public UserDto registerUser(UserDto UserDto) {
-        if (userRepository.existsByUsername(UserDto.getUsername())) {
-            throw new RuntimeException("Username already exists");
+    public UserDto registerUser(UserDto userDto) {
+        if (userRepository.existsByUsername(userDto.getUsername())) {
+            throw new UserException(USERNAME_EXISTS_MSG);
         }
-        if (userRepository.existsByEmail(UserDto.getEmail())) {
-            throw new RuntimeException("Email already exists");
+        if (userRepository.existsByEmail(userDto.getEmail())) {
+            throw new UserException(EMAIL_EXISTS_MSG);
         }
 
         User user = new User();
-        user.setUsername(UserDto.getUsername());
-        user.setEmail(UserDto.getEmail());
-        user.setPassword(passwordEncoder.encode(UserDto.getPassword()));
-        user.setFirstName(UserDto.getFirstName());
-        user.setLastName(UserDto.getLastName());
+        user.setUsername(userDto.getUsername());
+        user.setEmail(userDto.getEmail());
+        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        user.setFirstName(userDto.getFirstName());
+        user.setLastName(userDto.getLastName());
         user.setRole(User.Role.USER);
 
         User savedUser = userRepository.save(user);
@@ -47,7 +53,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     @Override
     public UserDto findByUsername(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserException(USER_NOT_FOUND_SIMPLE_MSG));
         return mapToDTO(user);
     }
 

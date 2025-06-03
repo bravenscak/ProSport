@@ -14,40 +14,53 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final String ERROR_ATTR = "error";
+    private static final String SUCCESS_ATTR = "success";
+    private static final String REDIRECT_REGISTER = "redirect:/register";
+    private static final String REDIRECT_LOGIN = "redirect:/login";
+    private static final String AUTH_LOGIN = "auth/login";
+    private static final String AUTH_REGISTER = "auth/register";
+    private static final String INVALID_USERNAME_PASSWORD = "Invalid username or password!";
+    private static final String PASSWORDS_NOT_MATCH = "Passwords do not match!";
+    private static final String REGISTRATION_SUCCESSFUL = "Registration successful! You can now log in.";
+
     private final UserService userService;
 
     @GetMapping("/login")
     public String login(@RequestParam(value = "error", required = false) String error, Model model) {
         if (error != null) {
-            model.addAttribute("error", "Invalid username or password!");
+            model.addAttribute(ERROR_ATTR, INVALID_USERNAME_PASSWORD);
         }
-        return "auth/login";
+        return AUTH_LOGIN;
     }
 
     @GetMapping("/register")
     public String register() {
-        return "auth/register";
+        return AUTH_REGISTER;
     }
 
     @PostMapping("/register")
-    public String registerUser(@RequestParam String username, @RequestParam String email,
-                               @RequestParam String password, @RequestParam String confirmPassword,
-                               @RequestParam String firstName, @RequestParam String lastName,
+    public String registerUser(@RequestParam String username,
+                               @RequestParam String email,
+                               @RequestParam String password,
+                               @RequestParam String confirmPassword,
+                               @RequestParam String firstName,
+                               @RequestParam String lastName,
                                RedirectAttributes attributes) {
         try {
             if (!password.equals(confirmPassword)) {
-                attributes.addFlashAttribute("error", "Passwords do not match!");
-                return "redirect:/register";
+                attributes.addFlashAttribute(ERROR_ATTR, PASSWORDS_NOT_MATCH);
+                return REDIRECT_REGISTER;
             }
 
-            UserDto UserDto = new UserDto(username, email, firstName, lastName, password);
-            userService.registerUser(UserDto);
-            attributes.addFlashAttribute("success", "Registration successful! You can now log in.");
-            return "redirect:/login";
+            UserDto userDto = new UserDto(username, email, firstName, lastName, password);
+            userService.registerUser(userDto);
+            attributes.addFlashAttribute(SUCCESS_ATTR, REGISTRATION_SUCCESSFUL);
+            return REDIRECT_LOGIN;
 
         } catch (RuntimeException e) {
-            attributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/register";
+            attributes.addFlashAttribute(ERROR_ATTR, e.getMessage());
+            return REDIRECT_REGISTER;
         }
     }
 }
