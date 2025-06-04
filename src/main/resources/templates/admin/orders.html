@@ -69,7 +69,10 @@
                         </a>
                     </li>
                     <small class="text-white-50 d-block mt-2">
-                        Aktivnih korisnika: <span th:text="${T(hr.java.web.prosport.config.SessionCounterListener).getActiveSessionCount()}">0</span>
+                        Login pokušaji:
+                        <span class="text-success" th:text="${T(hr.java.web.prosport.config.LoginAttemptListener).getSuccessfulLogins()}">0</span>
+                        /
+                        <span class="text-danger" th:text="${T(hr.java.web.prosport.config.LoginAttemptListener).getFailedLogins()}">0</span>
                     </small>
                 </ul>
 
@@ -118,7 +121,6 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
 
-                <!-- Filter sekcija -->
                 <div class="content-card mb-4">
                     <div class="card-header bg-white border-bottom p-4">
                         <h5 class="mb-0">
@@ -153,7 +155,6 @@
                     </div>
                 </div>
 
-                <!-- Lista narudžbi -->
                 <div class="content-card">
                     <div class="card-header bg-white border-bottom p-4">
                         <h5 class="mb-0">

@@ -82,7 +82,10 @@
                         </a>
                     </li>
                     <small class="text-white-50 d-block mt-2">
-                        Aktivnih korisnika: <span th:text="${T(hr.java.web.prosport.config.SessionCounterListener).getActiveSessionCount()}">0</span>
+                        Login pokušaji:
+                        <span class="text-success" th:text="${T(hr.java.web.prosport.config.LoginAttemptListener).getSuccessfulLogins()}">0</span>
+                        /
+                        <span class="text-danger" th:text="${T(hr.java.web.prosport.config.LoginAttemptListener).getFailedLogins()}">0</span>
                     </small>
                 </ul>
 

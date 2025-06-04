@@ -185,14 +185,6 @@
                 </div>
 
                 <div class="checkout-step">
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="agreeTerms" required>
-                        <label class="form-check-label" for="agreeTerms">
-                            Slažem se s <a href="#" class="text-decoration-none">uvjetima korištenja</a>
-                            i <a href="#" class="text-decoration-none">pravilima privatnosti</a> *
-                        </label>
-                    </div>
-
                     <div class="d-grid gap-2 d-md-flex justify-content-md-between">
                         <a th:href="@{/cart}" class="btn btn-outline-secondary btn-lg">
                             <i class="bi bi-arrow-left me-2"></i>Nazad na košaricu
@@ -285,7 +277,6 @@
         const shippingAddress = $('#shippingAddress').val().trim();
         const phoneNumber = $('#phoneNumber').val().trim();
         const paymentMethod = $('input[name="paymentMethod"]:checked').val();
-        const agreeTerms = $('#agreeTerms').is(':checked');
 
         if (!shippingAddress) {
             showAlert('danger', 'Molimo unesite adresu dostave');
@@ -302,11 +293,6 @@
             return;
         }
 
-        if (!agreeTerms) {
-            showAlert('danger', 'Morate se složiti s uvjetima korištenja');
-            return;
-        }
-
         const submitBtn = $('#placeOrderBtn');
         const originalText = submitBtn.html();
         submitBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split me-2"></i>Obrađujem narudžbu...');
@@ -320,7 +306,6 @@
             },
             success: function(response) {
                 if (response.success) {
-                    // Submit the form
                     $('#checkoutForm')[0].submit();
                 } else {
                     showAlert('danger', response.message);
@@ -344,10 +329,8 @@
         `;
         $('#alertContainer').html(alertHtml);
 
-        // Scroll to top to show alert
         $('html, body').animate({ scrollTop: 0 }, 500);
 
-        // Auto-hide after 5 seconds
         setTimeout(() => {
             $('.alert').fadeOut();
         }, 5000);
