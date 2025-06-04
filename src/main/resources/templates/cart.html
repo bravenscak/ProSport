@@ -140,7 +140,7 @@
     <div th:if="${cart.items != null and not #lists.isEmpty(cart.items)}" class="row">
         <div class="col-lg-8">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="mb-0">Proizvodi u košarici (<span th:text="${cart.totalItems}">0</span>)</h5>
+                <h5 class="mb-0" id="cartItemsHeader">Proizvodi u košarici (<span th:text="${cart.totalItems}">0</span>)</h5>
                 <button class="btn btn-outline-danger btn-sm" onclick="clearCart()">
                     <i class="bi bi-trash me-1"></i>Očisti košaricu
                 </button>
@@ -170,7 +170,8 @@
                         </div>
 
                         <div class="col-md-2 text-center">
-                            <span class="fw-bold text-primary" th:text="${item.priceAtTime + ' €'}">0.00 €</span>
+                            <span class="fw-bold text-primary unit-price" th:text="${item.priceAtTime + ' €'}"
+                                  th:data-price="${item.priceAtTime}">0.00 €</span>
                         </div>
 
                         <div class="col-md-2">
@@ -200,7 +201,7 @@
                         </div>
 
                         <div class="col-md-2 text-center">
-                            <div class="fw-bold text-success mb-2" th:text="${item.totalPrice + ' €'}">0.00 €</div>
+                            <div class="fw-bold text-success mb-2 item-total-price" th:text="${item.totalPrice + ' €'}">0.00 €</div>
                             <button class="btn btn-outline-danger btn-sm"
                                     onclick="removeFromCart(this)"
                                     th:data-item-id="${item.id}">
@@ -302,6 +303,7 @@
         }
 
         quantityInput.val(currentQuantity);
+        updateItemPriceDisplay(itemId, currentQuantity);
         updateCartItem(itemId, currentQuantity);
     }
 
@@ -312,16 +314,61 @@
 
         if (quantity < 1) {
             $(input).val(1);
+            updateItemPriceDisplay(itemId, 1);
+            updateCartItem(itemId, 1);
             return;
         }
 
         if (quantity > maxQuantity) {
             $(input).val(maxQuantity);
+            updateItemPriceDisplay(itemId, maxQuantity);
+            updateCartItem(itemId, maxQuantity);
             showAlert('warning', `Maksimalna dostupna količina je ${maxQuantity} kom`);
             return;
         }
 
+        updateItemPriceDisplay(itemId, quantity);
         updateCartItem(itemId, quantity);
+    }
+
+    function updateItemPriceDisplay(itemId, quantity) {
+        const cartItem = $(`#cartItem-${itemId}`);
+        const unitPriceElement = cartItem.find('.unit-price');
+        const unitPrice = parseFloat(unitPriceElement.data('price'));
+        const totalPrice = unitPrice * quantity;
+
+        cartItem.find('.item-total-price').text(totalPrice.toFixed(2) + ' €');
+
+        updateCartTotals();
+    }
+
+    function updateCartTotals() {
+        let totalItems = 0;
+        let totalAmount = 0;
+
+        $('.cart-item').each(function() {
+            const quantity = parseInt($(this).find('.quantity-input').val());
+            const unitPrice = parseFloat($(this).find('.unit-price').data('price'));
+
+            totalItems += quantity;
+            totalAmount += unitPrice * quantity;
+        });
+
+        $('#totalItems').text(totalItems);
+        $('#totalAmount').text(totalAmount.toFixed(2) + ' €');
+        $('#finalAmount').text(totalAmount.toFixed(2) + ' €');
+
+        $('#cartBadge').text(totalItems || 0);
+        if (totalItems > 0) {
+            $('#cartBadge').show();
+        } else {
+            $('#cartBadge').hide();
+        }
+
+        const cartHeader = $('#cartItemsHeader');
+        if (cartHeader.length) {
+            cartHeader.html(`Proizvodi u košarici (${totalItems})`);
+        }
     }
 
     function updateCartItem(itemId, quantity) {
@@ -334,14 +381,15 @@
             },
             success: function(response) {
                 if (response.success) {
-                    updateCartSummary(response.cart);
                     showAlert('success', response.message);
                 } else {
                     showAlert('danger', response.message);
+                    location.reload();
                 }
             },
             error: function() {
                 showAlert('danger', 'Greška pri ažuriranju košarice');
+                location.reload();
             }
         });
     }
@@ -364,7 +412,7 @@
                             if (response.cart.items.length === 0) {
                                 location.reload();
                             } else {
-                                updateCartSummary(response.cart);
+                                updateCartTotals();
                             }
                         });
                         showAlert('success', response.message);
@@ -396,13 +444,6 @@
                 }
             });
         }
-    }
-
-    function updateCartSummary(cart) {
-        $('#totalItems').text(cart.totalItems);
-        $('#totalAmount').text(cart.totalAmount + ' €');
-        $('#finalAmount').text(cart.totalAmount + ' €');
-        $('#cartBadge').text(cart.totalItems || 0);
     }
 </script>
 </body>
